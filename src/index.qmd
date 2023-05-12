@@ -156,14 +156,13 @@ First we construct a graph to showcase the metrics.
 
 ```{r}
 edge_list <- tibble(from = c(1, 2, 1), to = c(2, 4, 3))
-node_list <- tibble(id = as.character(1:5), label = paste0("v", seq(1, 5)))
+node_list <- tibble(id = as.character(1:4), label = paste0("v", seq(1, 4)))
 
 coords <- matrix(ncol = 2, byrow = T, data = c(
     1, 0,
     2, 0,
     2, 1,
-    3, 0,
-    3,1
+    3, 0
 ))
 
 visNetwork(node_list, edge_list) %>%
@@ -173,7 +172,7 @@ visNetwork(node_list, edge_list) %>%
 
 #### Delay Factor
 
-*Delay factor* is a metric used to quantify the existent of long pathways through a curriculum graph. These longs paths indicate a chain of requisite relationships where if w a student were to fail a given course along the path they would suffer a heavily delayed graduation. The delay factor for a given node is the number of vertices ih the longest path of $G_c$ that contains the given node.
+*Delay factor* is a metric used to quantify the existent of long pathways through a curriculum graph. These longs paths indicate a chain of requisite relationships where if w a student were to fail a given course along the path they would suffer a heavily delayed graduation. The delay factor for a given node is the number of vertices in the longest path of $G_c$ that contains the given node. An isolated node's delay factor is defined to be 1 and means it can be taken in any term. We also calculate the total delay factor for $G_c$ as the sum of all delay factors in the graph.
 
 ```{r Define delay factor}
  delay_factor <- function(edge_list,node_list){
@@ -219,7 +218,7 @@ for (v in as.numeric(node_list$id)) {
  }
 ```
 
-```{r}
+```{r Visualize example delay factor}
 df_df <- delay_factor(edge_list,node_list)
 df <- df_df$bynode
 
@@ -240,6 +239,82 @@ visNetwork(node_list, edge_list,
     visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
     visEvents(selectNode = "function(properties) {
       alert(' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}")
+```
+
+#### Blocking Factor
+
+*Blocking factor* is a quantity that captures a course's ability to gatekeep other courses. That is, if you fail a course with a high blocking factor you are blocked from taking many other courses. The blocking factor of a node is the number of nodes reachable from the given node. The total blocking factor of the graph is the sum of all individual blocking factors.
+
+```{r Define blocking factor}
+
+blocking_factor <- function(edge_list,node_list){
+#' Blocking factor
+#'
+#' Calculates the blocking factor for each node and the total blocking factor of the curriculum graph. The blocking factor of a node v is the number of nodes reachable from v. The function returns a list where bynode holds the blocking factor for each node and total holds the blocking factor for the graph.
+#'
+#' @param edge_list data frame containing the edge list of the graph.
+#' @param node_list data frame containing the node list of the graph.
+
+#need to find all nodes reachable with v as the root then return the total number of nodes reachable
+
+# get all paths
+bynode <- data.frame(id = NA, bf = NA)
+
+network <- graph_from_data_frame(
+    d = edge_list,
+    vertices = node_list,
+    directed = TRUE
+)
+paths <- list()
+
+for (v in as.numeric(node_list$id)) {
+    paths <- c(paths, all_simple_paths(network, from = v, mode = "out"))
+}
+
+
+for(v in as.numeric(node_list$id)){
+  nodes_reachable <- c()
+for(path in paths){
+  curr_path <- as.vector(path)
+  if(v %in% curr_path[1]){
+    nodes_reachable <- c(nodes_reachable, curr_path)
+  }
+}
+
+nodes_reachable <- unique(nodes_reachable)
+nodes_reachable <- nodes_reachable[nodes_reachable != v]
+
+bynode <- rbind(bynode, data.frame(id = as.character(v), bf = length(nodes_reachable)))
+}
+
+bynode <- na.omit(bynode)
+
+list(bynode = bynode, total = sum(bynode$bf))
+
+ }
+```
+
+```{r Visualize example blocking factor}
+bf_df <- blocking_factor(edge_list,node_list)
+bf <- bf_df$bynode
+
+
+
+node_list <- left_join(node_list, bf, by = c("id" = "id"))
+
+
+network <- graph_from_data_frame(
+    d = edge_list,
+    vertices = node_list,
+    directed = TRUE
+)
+
+visNetwork(node_list, edge_list, 
+           submain = list(text = paste("Total bf:",bf_df$total))) %>%
+    visEdges(arrows = "middle") %>%
+    visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
+    visEvents(selectNode = "function(properties) {
+      alert(' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf);}")
 ```
 
 
