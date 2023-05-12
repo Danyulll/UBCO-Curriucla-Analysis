@@ -383,29 +383,30 @@ No edge attributes</code></pre>
 <p>Curriculum is modeled as a <em>directed acyclic graph</em> (DAG) where courses are nodes and requisite relationships between nodes are directed edges. Mathematically a <em>curriculum graph</em> is denoted <span class="math inline">\(G_c = V(V,E)\)</span> where <span class="math inline">\(v_1,\dots,v_n \in V\)</span> are courses and the directed edge <span class="math inline">\((v_i,v_j) \in E\)</span> is a requisite from <span class="math inline">\(v_i\)</span> to <span class="math inline">\(v_j\)</span> that must be completed before enrollment in <span class="math inline">\(v_j\)</span>. Nodes in these graph are organized in columns representing each term in a curriculum. Edges down columns are co-requisites and edges across columns are pre-requisites.</p>
 <p>With this framework of modeling comes a host of useful metrics for gaining insight about a curriculum graph’s structure. Next we outline a few of the metrics and provide functions for calculating them.</p>
 <p>First we construct a graph to showcase the metrics.</p>
-<div class="cell" data-hash="index_cache/html/unnamed-chunk-12_213ccd92faab35cd1b16c55125d238d5">
+<div class="cell" data-hash="index_cache/html/unnamed-chunk-12_92c2a75e28a822a50c979a2b4a55f412">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>edge_list <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">from =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>), <span class="at">to =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">3</span>))</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>node_list <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">id =</span> <span class="fu">as.character</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>), <span class="at">label =</span> <span class="fu">paste0</span>(<span class="st">"v"</span>, <span class="fu">seq</span>(<span class="dv">1</span>, <span class="dv">4</span>)))</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>node_list <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">id =</span> <span class="fu">as.character</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>), <span class="at">label =</span> <span class="fu">paste0</span>(<span class="st">"v"</span>, <span class="fu">seq</span>(<span class="dv">1</span>, <span class="dv">5</span>)))</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>coords <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="at">ncol =</span> <span class="dv">2</span>, <span class="at">byrow =</span> T, <span class="at">data =</span> <span class="fu">c</span>(</span>
 <span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span>, <span class="dv">0</span>,</span>
 <span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="dv">2</span>, <span class="dv">0</span>,</span>
 <span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="dv">2</span>, <span class="dv">1</span>,</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    <span class="dv">3</span>, <span class="dv">0</span></span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="fu">visNetwork</span>(node_list, edge_list) <span class="sc">%&gt;%</span></span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">visEdges</span>(<span class="at">arrows =</span> <span class="st">"middle"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">visIgraphLayout</span>(<span class="at">layout =</span> <span class="st">"layout.norm"</span>, <span class="at">layoutMatrix =</span> coords)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    <span class="dv">3</span>, <span class="dv">0</span>,</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    <span class="dv">3</span>,<span class="dv">1</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="fu">visNetwork</span>(node_list, edge_list) <span class="sc">%&gt;%</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">visEdges</span>(<span class="at">arrows =</span> <span class="st">"middle"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">visIgraphLayout</span>(<span class="at">layout =</span> <span class="st">"layout.norm"</span>, <span class="at">layoutMatrix =</span> coords)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div class="visNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-05f8b6f2a09729ecec7d" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-05f8b6f2a09729ecec7d">{"x":{"nodes":{"id":["1","2","3","4"],"label":["v1","v2","v3","v4"],"x":[-1,0,0,1],"y":[-1,-1,1,-1]},"edges":{"from":[1,2,1],"to":[2,4,3]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"arrows":"middle","smooth":false},"physics":{"stabilization":false}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false},"byselection":{"enabled":false},"main":null,"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","igraphlayout":{"type":"square"}},"evals":[],"jsHooks":[]}</script>
+<div class="visNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-6ac10eb46a29f7671cd3" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-6ac10eb46a29f7671cd3">{"x":{"nodes":{"id":["1","2","3","4","5"],"label":["v1","v2","v3","v4","v5"],"x":[-1,0,0,1,1],"y":[-1,-1,1,-1,1]},"edges":{"from":[1,2,1],"to":[2,4,3]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"arrows":"middle","smooth":false},"physics":{"stabilization":false}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false},"byselection":{"enabled":false},"main":null,"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","igraphlayout":{"type":"square"}},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <section id="delay-factor" class="level4">
 <h4 class="anchored" data-anchor-id="delay-factor">Delay Factor</h4>
 <p><em>Delay factor</em> is a metric used to quantify the existent of long pathways through a curriculum graph. These longs paths indicate a chain of requisite relationships where if w a student were to fail a given course along the path they would suffer a heavily delayed graduation. The delay factor for a given node is the number of vertices ih the longest path of <span class="math inline">\(G_c\)</span> that contains the given node.</p>
-<div class="cell" data-hash="index_cache/html/Define delay factor_3d346e847d28e0032f1f4b9f31253f7e">
+<div class="cell" data-hash="index_cache/html/Define delay factor_f86a238c6905485d021ab489f7ecaae6">
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a> delay_factor <span class="ot">&lt;-</span> <span class="cf">function</span>(edge_list,node_list){</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co">#' Delay factor</span></span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
@@ -435,39 +436,43 @@ No edge attributes</code></pre>
 <span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a>        }</span>
 <span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a>    }</span>
 <span id="cb23-29"><a href="#cb23-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-30"><a href="#cb23-30" aria-hidden="true" tabindex="-1"></a>    bynode <span class="ot">&lt;-</span> <span class="fu">rbind</span>(bynode, <span class="fu">data.frame</span>(<span class="at">id =</span> <span class="fu">as.character</span>(v), <span class="at">df =</span> max_length))</span>
-<span id="cb23-31"><a href="#cb23-31" aria-hidden="true" tabindex="-1"></a>   </span>
-<span id="cb23-32"><a href="#cb23-32" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb23-33"><a href="#cb23-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-34"><a href="#cb23-34" aria-hidden="true" tabindex="-1"></a> bynode <span class="ot">&lt;-</span> <span class="fu">na.omit</span>(bynode)</span>
-<span id="cb23-35"><a href="#cb23-35" aria-hidden="true" tabindex="-1"></a> total <span class="ot">&lt;-</span> <span class="fu">sum</span>(bynode<span class="sc">$</span>df)</span>
-<span id="cb23-36"><a href="#cb23-36" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb23-37"><a href="#cb23-37" aria-hidden="true" tabindex="-1"></a> <span class="fu">list</span>(<span class="at">bynode =</span> bynode, <span class="at">total =</span> total)</span>
-<span id="cb23-38"><a href="#cb23-38" aria-hidden="true" tabindex="-1"></a> }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb23-30"><a href="#cb23-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(max_length <span class="sc">==</span> <span class="dv">0</span>){</span>
+<span id="cb23-31"><a href="#cb23-31" aria-hidden="true" tabindex="-1"></a>      max_length <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb23-32"><a href="#cb23-32" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb23-33"><a href="#cb23-33" aria-hidden="true" tabindex="-1"></a>    bynode <span class="ot">&lt;-</span> <span class="fu">rbind</span>(bynode, <span class="fu">data.frame</span>(<span class="at">id =</span> <span class="fu">as.character</span>(v), <span class="at">df =</span> max_length))</span>
+<span id="cb23-34"><a href="#cb23-34" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb23-35"><a href="#cb23-35" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb23-36"><a href="#cb23-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-37"><a href="#cb23-37" aria-hidden="true" tabindex="-1"></a> bynode <span class="ot">&lt;-</span> <span class="fu">na.omit</span>(bynode)</span>
+<span id="cb23-38"><a href="#cb23-38" aria-hidden="true" tabindex="-1"></a> total <span class="ot">&lt;-</span> <span class="fu">sum</span>(bynode<span class="sc">$</span>df)</span>
+<span id="cb23-39"><a href="#cb23-39" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb23-40"><a href="#cb23-40" aria-hidden="true" tabindex="-1"></a> <span class="fu">list</span>(<span class="at">bynode =</span> bynode, <span class="at">total =</span> total)</span>
+<span id="cb23-41"><a href="#cb23-41" aria-hidden="true" tabindex="-1"></a> }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-hash="index_cache/html/unnamed-chunk-13_f96f452ae4b73ac43c336eb200ac1c35">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">delay_factor</span>(edge_list,node_list)<span class="sc">$</span>bynode</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<div class="cell" data-hash="index_cache/html/unnamed-chunk-13_7dfa52442ef328641cc2a159afe7cb39">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>df_df <span class="ot">&lt;-</span> <span class="fu">delay_factor</span>(edge_list,node_list)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df_df<span class="sc">$</span>bynode</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>node_list <span class="ot">&lt;-</span> <span class="fu">left_join</span>(node_list, df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"id"</span> <span class="ot">=</span> <span class="st">"id"</span>))</span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>node_list <span class="ot">&lt;-</span> <span class="fu">left_join</span>(node_list, df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"id"</span> <span class="ot">=</span> <span class="st">"id"</span>))</span>
 <span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>network <span class="ot">&lt;-</span> <span class="fu">graph_from_data_frame</span>(</span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">d =</span> edge_list,</span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">vertices =</span> node_list,</span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">directed =</span> <span class="cn">TRUE</span></span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a><span class="fu">visNetwork</span>(node_list, edge_list,<span class="at">main =</span> <span class="st">"A really simple example"</span>, </span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>           <span class="at">submain =</span> <span class="fu">list</span>(<span class="at">text =</span> <span class="st">"Custom subtitle"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">visEdges</span>(<span class="at">arrows =</span> <span class="st">"middle"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">visIgraphLayout</span>(<span class="at">layout =</span> <span class="st">"layout.norm"</span>, <span class="at">layoutMatrix =</span> coords) <span class="sc">%&gt;%</span></span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">visEvents</span>(<span class="at">selectNode =</span> <span class="st">"function(properties) {</span></span>
-<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a><span class="st">      alert(' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>network <span class="ot">&lt;-</span> <span class="fu">graph_from_data_frame</span>(</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">d =</span> edge_list,</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">vertices =</span> node_list,</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">directed =</span> <span class="cn">TRUE</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="fu">visNetwork</span>(node_list, edge_list, </span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>           <span class="at">submain =</span> <span class="fu">list</span>(<span class="at">text =</span> <span class="fu">paste</span>(<span class="st">"Total df:"</span>,df_df<span class="sc">$</span>total))) <span class="sc">%&gt;%</span></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">visEdges</span>(<span class="at">arrows =</span> <span class="st">"middle"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">visIgraphLayout</span>(<span class="at">layout =</span> <span class="st">"layout.norm"</span>, <span class="at">layoutMatrix =</span> coords) <span class="sc">%&gt;%</span></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">visEvents</span>(<span class="at">selectNode =</span> <span class="st">"function(properties) {</span></span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a><span class="st">      alert(' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div class="visNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-6ac10eb46a29f7671cd3" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-6ac10eb46a29f7671cd3">{"x":{"nodes":{"id":["1","2","3","4"],"label":["v1","v2","v3","v4"],"df":[3,3,2,3],"x":[-1,0,0,1],"y":[-1,-1,1,-1]},"edges":{"from":[1,2,1],"to":[2,4,3]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"arrows":"middle","smooth":false},"physics":{"stabilization":false}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false},"byselection":{"enabled":false},"main":{"text":"A really simple example","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":{"text":"Custom subtitle","style":"font-family:Georgia, Times New Roman, Times, serif;font-size:12px;text-align:center;"},"footer":null,"background":"rgba(0, 0, 0, 0)","igraphlayout":{"type":"square"},"events":{"selectNode":"function(properties) {\n      alert(' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}"}},"evals":["events.selectNode"],"jsHooks":[]}</script>
+<div class="visNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-05f8b6f2a09729ecec7d" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-05f8b6f2a09729ecec7d">{"x":{"nodes":{"id":["1","2","3","4","5"],"label":["v1","v2","v3","v4","v5"],"df":[3,3,2,3,0],"x":[-1,0,0,1,1],"y":[-1,-1,1,-1,1]},"edges":{"from":[1,2,1],"to":[2,4,3]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"arrows":"middle","smooth":false},"physics":{"stabilization":false}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false},"byselection":{"enabled":false},"main":null,"submain":{"text":"Total df: 11","style":"font-family:Georgia, Times New Roman, Times, serif;font-size:12px;text-align:center;"},"footer":null,"background":"rgba(0, 0, 0, 0)","igraphlayout":{"type":"square"},"events":{"selectNode":"function(properties) {\n      alert(' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}"}},"evals":["events.selectNode"],"jsHooks":[]}</script>
 </div>
 </div>
 </section>
