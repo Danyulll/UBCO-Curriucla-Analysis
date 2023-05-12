@@ -255,9 +255,6 @@ blocking_factor <- function(edge_list,node_list){
 #' @param edge_list data frame containing the edge list of the graph.
 #' @param node_list data frame containing the node list of the graph.
 
-#need to find all nodes reachable with v as the root then return the total number of nodes reachable
-
-# get all paths
 bynode <- data.frame(id = NA, bf = NA)
 
 network <- graph_from_data_frame(
@@ -317,7 +314,66 @@ visNetwork(node_list, edge_list,
       alert(' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf);}")
 ```
 
+#### Centrality Factor
 
+*Centrality factor* indicates how central a node is to a curriculum. A node is considered central if it requires many pre-requisite courses and is itself a pre-requisite to many courses. Heileman et al. says in curricular analytics we are greatly interested in how learning outcomes achieved in one course are used in later courses and we therefore wish to identify key central courses in these paths [- @heileman2018curricular]. The centrality factor is meant to capture this and is defined as the number of nodes in all long paths that include the given node. A long path is defined to be a path with length greater than or equal to 3. Nodes who only fall on paths shorter than this are given a centrality of 0.
+
+```{r Define centrality factor}
+centrality_factor <- function(edge_list,node_list){
+#' Centrality factor
+#'
+#' Calculates the centrality factor for each node. The centrality factor of a node v is the number of long paths containing v where a long path is one of length 3 or greater. The function returns a dataframe that holds the centrality factor for each node.
+#'
+#' @param edge_list data frame containing the edge list of the graph.
+#' @param node_list data frame containing the node list of the graph.
+
+bynode <- data.frame(id = as.numeric(node_list$id), cf = rep(0,length(node_list$id)))
+
+network <- graph_from_data_frame(
+    d = edge_list,
+    vertices = node_list,
+    directed = TRUE
+)
+paths <- list()
+
+for (v in as.numeric(node_list$id)) {
+    paths <- c(paths, all_simple_paths(network, from = v, mode = "out"))
+}
+
+for(path in paths){
+    curr_path <- as.vector(path)
+    if(length(curr_path) >= 3){
+        long_path_nodes <- curr_path[c(-1,-length(curr_path))]
+
+        for(node in long_path_nodes){
+            bynode[node,c("cf")] <- bynode[node,c("cf")] + length(curr_path)
+        }
+    }
+}
+
+bynode$id <- as.character(bynode$id)
+bynode 
+}
+```
+
+```{r Visualize example centrality factor}
+cf <- centrality_factor(edge_list,node_list)
+
+node_list <- left_join(node_list, cf, by = c("id" = "id"))
+
+
+network <- graph_from_data_frame(
+    d = edge_list,
+    vertices = node_list,
+    directed = TRUE
+)
+
+visNetwork(node_list, edge_list) %>%
+    visEdges(arrows = "middle") %>%
+    visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
+    visEvents(selectNode = "function(properties) {
+      alert(' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf);}")
+```
 
 ### Analysis
 
