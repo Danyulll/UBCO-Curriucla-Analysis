@@ -375,6 +375,52 @@ visNetwork(node_list, edge_list) %>%
       alert(' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf);}")
 ```
 
+#### Structural Complexity
+*Structural Complexity* is a metric that assess the impact that curricular structure will have on a student's journey through a curriculum. In simulations it was find that a high structural complexity correlated to decreased graduation rates. The structural complexity for a given node is a linear combination of its delay and blocking factors. The Structural complexity of an entire curriculum graph is the sum of all structural complexities.
+
+```{r Define structural complexity}
+ structural_complexity <- function(edge_list,node_list){
+#' Structural Complexity
+#'
+#' Calculates the structural complexity for each node and for the entire curriculum graph. The structural complexity is a linear combination of the delay and blocking factors.The function returns a list where bynode holds the structural complexity for each node and total holds the structural complexity for the graph.
+#'
+#' @param edge_list data frame containing the edge list of the graph.
+#' @param node_list data frame containing the node list of the graph.
+
+
+
+bf_df <- blocking_factor(edge_list,node_list)
+bf <- bf_df$bynode$bf
+
+df_df <- delay_factor(edge_list,node_list)
+df <- df_df$bynode$df
+
+bynode <- data.frame(id = node_list$id, sc = (bf + df))
+
+list(bynode = bynode, total = sum(bynode$sc))
+
+ }
+```
+
+
+```{r Visualize example structural complexity}
+sc <- structural_complexity(edge_list,node_list)$bynode
+
+node_list <- left_join(node_list, sc, by = c("id" = "id"))
+
+
+network <- graph_from_data_frame(
+    d = edge_list,
+    vertices = node_list,
+    directed = TRUE
+)
+
+visNetwork(node_list, edge_list) %>%
+    visEdges(arrows = "middle") %>%
+    visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
+    visEvents(selectNode = "function(properties) {
+      alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc);}")
+```
 ### Analysis
 
 Our data set consists of course information from the data science program at UBCO. We have course codes, names, descriptions, and requisite relationships. 
