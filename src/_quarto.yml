@@ -1,0 +1,9 @@
+project:
+  title: "UBCO-Curriucla-Analysis"
+  output-dir: ../docs
+format:
+  html:
+    toc: TRUE
+    toc-depth: 4
+execute: 
+  cache: true
