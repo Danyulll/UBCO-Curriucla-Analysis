@@ -4,7 +4,7 @@ format: html
 bibliography: references.bib
 output-dir: ./docs
 ---
-## Introduction to Network Analysis
+## Introduction to Network Analysis in R
 
 A nice introduction to Network Analysis in R is given [here](https://www.jessesadler.com/post/network-analysis-with-r/)
 
@@ -135,16 +135,12 @@ ggraph(network_tbl, layout = "linear") +
 It is quite easy to turn our previously static graphs into interactive visualizations. [visNetwork](https://datastorm-open.github.io/visNetwork/) uses JavaScript to create these visualizations and has create documentation for increasing the interactivity of our graphs. We will use this visualization package for our analysis. Others however do exist like networkD3.
 
 ```{r, warning=FALSE}
-
-
 visNetwork(node_list, edge_list) %>%
     visEdges(arrows = "middle")
 ```
 
 
 ## Curricular Analytics
-
-### Background
 
 The following is adapted from [@heileman2018curricular].
 
@@ -170,7 +166,7 @@ visNetwork(node_list, edge_list) %>%
     visIgraphLayout(layout = "layout.norm", layoutMatrix = coords)
 ```
 
-#### Delay Factor
+### Delay Factor
 
 *Delay factor* is a metric used to quantify the existent of long pathways through a curriculum graph. These longs paths indicate a chain of requisite relationships where if w a student were to fail a given course along the path they would suffer a heavily delayed graduation. The delay factor for a given node is the number of vertices in the longest path of $G_c$ that contains the given node. An isolated node's delay factor is defined to be 1 and means it can be taken in any term. We also calculate the total delay factor for $G_c$ as the sum of all delay factors in the graph.
 
@@ -241,7 +237,7 @@ visNetwork(node_list, edge_list,
       alert(' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}")
 ```
 
-#### Blocking Factor
+### Blocking Factor
 
 *Blocking factor* is a quantity that captures a course's ability to gatekeep other courses. That is, if you fail a course with a high blocking factor you are blocked from taking many other courses. The blocking factor of a node is the number of nodes reachable from the given node. The total blocking factor of the graph is the sum of all individual blocking factors.
 
@@ -314,7 +310,7 @@ visNetwork(node_list, edge_list,
       alert(' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf);}")
 ```
 
-#### Centrality Factor
+### Centrality Factor
 
 *Centrality factor* indicates how central a node is to a curriculum. A node is considered central if it requires many pre-requisite courses and is itself a pre-requisite to many courses. Heileman et al. says in curricular analytics we are greatly interested in how learning outcomes achieved in one course are used in later courses and we therefore wish to identify key central courses in these paths [- @heileman2018curricular]. The centrality factor is meant to capture this and is defined as the number of nodes in all long paths that include the given node. A long path is defined to be a path with length greater than or equal to 3. Nodes who only fall on paths shorter than this are given a centrality of 0.
 
@@ -375,7 +371,7 @@ visNetwork(node_list, edge_list) %>%
       alert(' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf);}")
 ```
 
-#### Structural Complexity
+### Structural Complexity
 *Structural Complexity* is a metric that assess the impact that curricular structure will have on a student's journey through a curriculum. In simulations it was find that a high structural complexity correlated to decreased graduation rates. The structural complexity for a given node is a linear combination of its delay and blocking factors. The Structural complexity of an entire curriculum graph is the sum of all structural complexities.
 
 ```{r Define structural complexity}
@@ -404,6 +400,19 @@ list(bynode = bynode, total = sum(bynode$sc))
 
 
 ```{r Visualize example structural complexity}
+
+edge_list <- tibble(from = c(1, 1, 1,3), to = c(2, 3, 4,5))
+node_list <- tibble(id = as.character(1:5), label = paste0("v", seq(1, 5)))
+
+coords <- matrix(ncol = 2, byrow = T, data = c(
+    1, 0,
+    2, 0,
+    2, 1,
+    2, 2,
+    3, 0
+))
+
+
 sc <- structural_complexity(edge_list,node_list)$bynode
 
 node_list <- left_join(node_list, sc, by = c("id" = "id"))
@@ -421,7 +430,40 @@ visNetwork(node_list, edge_list) %>%
     visEvents(selectNode = "function(properties) {
       alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc);}")
 ```
-### Analysis
+
+## Bayesian Networks
+
+*Bayesian Networks* (BNs) are a machine learning model that in the context of curricular analytics can be used for knowledge discovery and lowering the structural complexity of a curriculum graph [@slim2021restructuring]. Slim et al. showcased the use of BNs in curricula graphs as a means to statistically validate the restructuring of university programs through discovering latent nodes in the graph evaluating them using a likelihood-ratio test. They further mention the model's capability to be used in the prediction of student grades.
+
+BNs have much support within R and the text *Bayesian Networks in R* provides a good introduction to many of the concepts used in this analysis [@nagarajan2013bayesian].
+
+### Background
+
+Explanations and examples are adapted from [@scutari2009learning].
+
+Bayesian networks utilizes DAGs to model a set of random variables, i.e., for the set $\mathbf{X}=\{X_1,\dots,X_p\}$ of random variables the DAG $G=(\mathbf{V},\mathbf{A})$ is constructed where $v_i \in \mathbf{V}$ corresponds to a random variable from our set $\mathbf{X}$ and $\mathbf{A}$ is the set of arcs (edges).
+
+The DAG itself is a factorization of the joint probability distribution of $\mathbf{V}$. This factorization follows from the Markov property of Bayesian networks: every random variable $X_i$ directly depends only on its parents $\Pi_{X_i}$ or
+
+$$P(X_1,\dots,X_v)=\prod^v_{i=1}P(X_i|\Pi_{X_i})\text{ (for discrete variables)}$$
+
+probability distributions exist for each node as a result of this factorization, called *local probability distributions*. The joint probability distribution for all nodes is called the *global probability distribution*.
+
+Bayesian network model selection is done through learning the graphical structure of a Bayesian network and then estimating the parameters of the local distribution functions. It is most common to assume the local distributions are multinomial for discrete data which fits our use case.
+
+
+
+### BNs in R
+```{r,message = FALSE, warning = FALSE}
+library(bnlearn)
+```
+
+
+
+
+## Analysis of UBCO Data Science Curriculum
+
+### Setup
 
 Our data set consists of course information from the data science program at UBCO. We have course codes, names, descriptions, and requisite relationships. 
 
@@ -431,13 +473,14 @@ ubco <- read.csv("..\\data\\UBCO\\UBCO_Course_Calendar.csv")
 str(ubco)
 ```
 
-With this we can construct degree pathways through our curriculum and graph them. Since there are many electives within our program there are many possible curriculum graphs.
+With this we can construct degree pathways through our curriculum and graph them. Since there are many electives within our program there are many possible curriculum graphs. We will analyze the most and least structurally complex curricula and see what patterns emerge. 
 
 ```{r}
-# Set seed
-set.seed(8746)
+# Create list for storing pathways
+Gc <- list()
 
-# Generate degree pathway
+for(i in 1:100){
+    # Generate degree pathway
 pathway <-
     data.frame(
         Course.Code = NA,
@@ -549,12 +592,6 @@ pathway <-
 pathway <- na.omit(pathway)
 rownames(pathway) <- 1:nrow(pathway)
 
-head(pathway)
-```
-
-After generating a student's path through our program we generate the node and edge lists.
-
-```{r}
 # Construct node and edge list
 
 node_list <-
@@ -582,9 +619,44 @@ for (node in node_list$label) {
     }
 }
 edge_list <- na.omit(edge_list)
+
+# Get structural complexity
+
+sc <- structural_complexity(edge_list, node_list)
+
+# Store in list
+results <- list(node_list = node_list, edge_list = edge_list, sc = sc)
+
+Gc <- c(Gc, list(results))
+}
 ```
 
-By default visNetwork will randomly places nodes all over the place. Therefore we specify a coordinate list to get the term structure outlined in [@heileman2018curricular].
+```{r}
+# Initialize variables for maximum and minimum values
+max_total <- -Inf
+min_total <- Inf
+max_index <- NULL
+min_index <- NULL
+
+# Iterate through Gc to find max and min indices
+for (i in seq_along(Gc)) {
+  total <- Gc[[i]]$sc$total
+  if (total > max_total) {
+    max_total <- total
+    max_index <- i
+  }
+  if (total < min_total) {
+    min_total <- total
+    min_index <- i
+  }
+}
+
+# Display the indices
+print(paste("Index of maximum sc$total:", max_index))
+print(paste("Index of minimum sc$total:", min_index))
+```
+
+### Maximum Structural Complexity
 
 ```{r}
 # Specify node locations
@@ -621,110 +693,58 @@ coords <- matrix(ncol = 2, byrow = T, data = c(
 ))
 ```
 
-I would also like the various metrics for each node to be displayed when clicking on them to facilitate the analysis. There is no R package for Curricular Analytics so I have code the metrics myself.
-
-```{r Metric Functions}
-# TODO work in progress
-
-# TODO currently calculates longest path with given node as the root. Therefore peripheriy nodes get a df of 1 when it should be more
-# delay factor - number of vertices in the longest path in G that pass through v
-delay_factor <- function(network) {
-    delay_factor <- data.frame(name = NA, df = NA)
-
-    # extract node list
-    node_list <- as_data_frame(network, what = "vertices")
-
-    # for each node in node list
-    for (v in node_list$name) {
-        dists <-
-            distances(network, v = v, mode = "out") # find distances to all other nodes
-        idx <- is.finite(dists)
-        dists <- dists[idx]
-        df <- max(dists) + 1 # add 1 to make it a node count
-        delay_factor <-
-            rbind(delay_factor, data.frame(name = v, df = df))
-    }
-    delay_factor <-
-        na.omit(delay_factor) # return delay factors of each node
-    list(bynode = delay_factor, total = sum(delay_factor$df))
-}
-
-# blocking factor - number of nodes blocked by a given nodes
-# TODO also doesn't work right seems to be off by 1 each time
-blocking_factor <- function(network) {
-    blocking_factor <- data.frame(name = NA, bf = NA)
-
-    # extract node list
-    node_list <- as_data_frame(network, what = "vertices")
-
-    for (v in node_list$name) {
-        bf <- length(na.omit(bfs(network, v, unreachable = F)$order)) - 1
-        blocking_factor <-
-            rbind(blocking_factor, data.frame(name = v, bf = bf))
-    }
-
-    blocking_factor <- na.omit(blocking_factor)
-    list(bynode = blocking_factor, total = sum(blocking_factor$bf))
-}
-
-# reachability factor - number of courses that must be completed before one would be allowed to take a given course
-reachability_factor <- function(network) {
-    reachability_factor <- data.frame(name = NA, rf = NA)
-
-    # extract node list
-    node_list <- as_data_frame(network, what = "vertices")
-
-    for (v in node_list$name) {
-        rf <- length(na.omit(dfs(network, v, unreachable = F, mode = "out")$order)) - 1
-        reachability_factor <-
-            rbind(reachability_factor, data.frame(name = v, rf = rf))
-    }
-
-    reachability_factor <- na.omit(reachability_factor)
-    list(bynode = reachability_factor, total = sum(reachability_factor$rf))
-}
-```
-
-Now we call my functions on our network object, calculate the metrics and  join the resulting tables to our node_list.
 
 ```{r}
+node_list <- Gc[[max_index]]$node_list
+edge_list <- Gc[[max_index]]$edge_list
 
+sc_df <- structural_complexity(edge_list,node_list)
+cf_df <- centrality_factor(edge_list,node_list)
+bf_df <- blocking_factor(edge_list,node_list) 
+df_df <- delay_factor(edge_list,node_list)
 
-network <- graph_from_data_frame(
-    d = edge_list,
-    vertices = node_list,
-    directed = TRUE
-)
+node_list <- left_join(node_list, sc_df$bynode, by = c("id" = "id"))
+node_list <- left_join(node_list, cf_df, by = c("id" = "id"))
+node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "id"))
+node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
 
-df_df <- delay_factor(network)
-bf_df <- blocking_factor(network)
-rf_df <- reachability_factor(network)
-
-node_list <- left_join(node_list, df_df$bynode, by = c("id" = "name"))
-node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "name"))
-node_list <- left_join(node_list, rf_df$bynode, by = c("id" = "name"))
-
-network <- graph_from_data_frame(
-    d = edge_list,
-    vertices = node_list,
-    directed = TRUE
-)
-
-```
-
-Finally we make the graph visualization. I have specified a custom viSEvents function so that upon clicking a node the metrics are displayed. Just as a note visEvents needs to be written in JavaScript and to see what is possible view the documentation.
-
-```{r}
-# node_list$label <- paste(node_list$label,node_list$id)
-
-# Generate Curriculum Graph
-visNetwork(node_list, edge_list) %>%
+visNetwork(node_list, edge_list,submain = paste("Total Structural Complexity:",sc_df$total,"Total Blocking Factor:",bf_df$total,"Total Delay Factor:",df_df$total)) %>%
     visEdges(arrows = "middle") %>%
     visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
     visEvents(selectNode = "function(properties) {
-      alert('id: ' + this.body.data.nodes.get(properties.nodes[0]).id + ' df: ' + this.body.data.nodes.get(properties.nodes[0]).df + ' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf+ ' rf: ' + this.body.data.nodes.get(properties.nodes[0]).rf);}")
+      alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc + ' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf + ' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf + ' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}")
+
+
 ```
 
+Analysis here
+
+### Minimum Structural Complexity
+
+```{r}
+node_list <- Gc[[min_index]]$node_list
+edge_list <- Gc[[min_index]]$edge_list
+
+sc_df <- structural_complexity(edge_list,node_list)
+cf_df <- centrality_factor(edge_list,node_list)
+bf_df <- blocking_factor(edge_list,node_list) 
+df_df <- delay_factor(edge_list,node_list)
+
+node_list <- left_join(node_list, sc_df$bynode, by = c("id" = "id"))
+node_list <- left_join(node_list, cf_df, by = c("id" = "id"))
+node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "id"))
+node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
+
+visNetwork(node_list, edge_list,submain = paste("Total Structural Complexity:",sc_df$total,"Total Blocking Factor:",bf_df$total,"Total Delay Factor:",df_df$total)) %>%
+    visEdges(arrows = "middle") %>%
+    visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
+    visEvents(selectNode = "function(properties) {
+      alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc + ' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf + ' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf + ' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}")
+
+
+```
+
+Analysis here
 ## References
 
 ::: {#refs}
