@@ -17,6 +17,7 @@ Generally to create graphs you will need an adjacency matrix (for the network, i
 Edge-list data frames have at least two columns: "from" and "to" columns for describing connections between nodes. Other columns may be added to describes attributes of nodes or weights for edges. Each node requires a unique identifier, generally an integer. An example Edge-list data frame:
 
 ```{r setup, include=FALSE}
+library(knitr)
 knitr::opts_chunk$set(message = FALSE, warning = FALSE, cache = TRUE)
 ```
 
@@ -312,7 +313,7 @@ visNetwork(node_list, edge_list,
 
 ### Centrality Factor
 
-*Centrality factor* indicates how central a node is to a curriculum. A node is considered central if it requires many pre-requisite courses and is itself a pre-requisite to many courses. Heileman et al. says in curricular analytics we are greatly interested in how learning outcomes achieved in one course are used in later courses and we therefore wish to identify key central courses in these paths [- @heileman2018curricular]. The centrality factor is meant to capture this and is defined as the number of nodes in all long paths that include the given node. A long path is defined to be a path with length greater than or equal to 3. Nodes who only fall on paths shorter than this are given a centrality of 0.
+*Centrality factor* indicates how central a node is to a curriculum. A node is considered central if it requires many pre-requisite courses and is itself a pre-requisite to many courses. Heileman et al. says in curricular analytics we are greatly interested in how learning outcomes achieved in one course are used in later courses and we therefore wish to identify key central courses in these paths [-@heileman2018curricular]. The centrality factor is meant to capture this and is defined as the number of nodes in all long paths that include the given node. A long path is defined to be a path with length greater than or equal to 3. Nodes who only fall on paths shorter than this are given a centrality of 0.
 
 ```{r Define centrality factor}
 centrality_factor <- function(edge_list,node_list){
@@ -560,6 +561,8 @@ pathway <-
 upper_year_data <-
     c("DATA 310", "DATA 315", "DATA 405", "DATA 407", "DATA 410")
 max_2_stat <- c("STAT 400", "STAT 401", "STAT 403", "STAT 406")
+
+# TODO I don't include MATH 409 or PHYS 420
 max_2_cosc_math_phys <-
     c(
         "COSC 303",
@@ -569,9 +572,7 @@ max_2_cosc_math_phys <-
         "COSC 407",
         "COSC 421",
         "MATH 303",
-        "MATH 307",
-        "MATH 409",
-        "PHYS 420"
+        "MATH 307"
     )
 course <- c()
 while (length(unique(course)) < 9) {
@@ -665,31 +666,30 @@ coords <- matrix(ncol = 2, byrow = T, data = c(
     1, 1,
     1, 2,
     1, 3,
-    1, 4,
-    1, 5,
-    1, 6,
-    1, 7,
-    1, 8,
+    1, 4, #
     2, 0,
     2, 1,
     2, 2,
     2, 3,
-    2, 4,
-    2, 5,
+    2, 4, #
     3, 0,
     3, 1,
     3, 2,
     3, 3,
-    3, 4,
-    3, 5,
-    3, 6,
+    3, 4, #
     4, 0,
     4, 1,
     4, 2,
     4, 3,
-    4, 4,
-    4, 5,
-    4, 6
+    4, 4, #
+    5, 0,
+    5, 1,
+    5, 2,
+    5, 3,
+    5, 4, #
+    6, 0,
+    6, 1,
+    6, 2
 ))
 ```
 
@@ -709,20 +709,33 @@ coords <- matrix(ncol = 2, byrow = T, data = c(
 # node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
 # max_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
 
-# save(max_graph, file = "./maxGraph.RData")
+#  save(max_graph, file = "./maxGraph.RData")
 
 load("..\\data\\rdata\\maxGraph.RData")
 
 visNetwork(max_graph$node_list, max_graph$edge_list,submain = paste("Total Structural Complexity:",max_graph$sc_total,"Total Blocking Factor:",max_graph$bf_total,"Total Delay Factor:", max_graph$df_total)) %>%
-    visEdges(arrows = "middle") %>%
+    visEdges(arrows = "to") %>%
     visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
     visEvents(selectNode = "function(properties) {
       alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc + ' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf + ' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf + ' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}")
-
-
 ```
 
-Analysis here
+Examining our maximally complex graph we can learn the set of key courses that are contributing most to our metrics. The total structural complexitity is 194, the total blocking factor is 80, and the total delay factor is 114.
+
+The most central node in this graph by far is STAT 230 with a centrality factor of 138. In UBCO's Data Science program is it the first statistics course many students encounter and is a preq-requisite to many 3rd and 4th year classes. Coming in at second is MATH 101 at 95. This also makes sense as it is Calculus 2 as it is a pre-requisite for STAT 230 and the Caluclus 3 class MATH 200. Finally COSC 221 is 3rd with 70. This course is discrete math and is a pre-requisite for STAT 230. This suggests as STAT 230 is so central and course that is its pre-requisite is also central.
+
+The course with the greatest blocking factor is MATH 100 with a blocking factor of 17. This course is Calculus 1 and so it is likely unavoidable to for this course to have a high blocking factor. After all, Calulus is the foundation for many courses in a data science program and so it finds itself the root of many chains of edges.
+
+The course with the greatest delay factor is tied for MATH 100, MATH 101, STAT 230, COSC 221, DATA 311, and DATA 410. These courses find themselves a part of the longest path in the graph of length 6.
+
+The course with the largest structural complexity is MATH 100 with a score of 23. This is followed by MATH 101 at 20 and COSC 221 at 14. It is interesting that STAT 230 comes at 4th with only a strucutral complexity of 12. Because MATH 100 and 101 find them selves at the root of many paths it follow that they add quite heavily to the strucutral complexity of our graph.
+
+These metrics suggest a revision of pathways including STAT 230, MATH 100, MATH 101, and COSC 221.
+
+Here is a full table of the metrics
+```{r}
+kable(max_graph$node_list)
+```
 
 ### Minimum Structural Complexity
 
@@ -733,30 +746,30 @@ coords <- matrix(ncol = 2, byrow = T, data = c(
     1, 1,
     1, 2,
     1, 3,
-    1, 4,
-    1, 5,
-    1, 6,
-    1, 7,
-    1, 8,
+    1, 4, 
     2, 0,
     2, 1,
     2, 2,
     2, 3,
-    2, 4,
-    2, 5,
+    2, 4, 
     3, 0,
     3, 1,
     3, 2,
     3, 3,
-    3, 4,
-    3, 5,
-    3, 6,
+    3, 4, 
     4, 0,
     4, 1,
     4, 2,
     4, 3,
-    4, 4,
-    4, 5
+    4, 4, 
+    5, 0,
+    5, 1,
+    5, 2,
+    5, 3, 
+    6, 0,
+    6, 1,
+    6, 2, 
+    6, 3 
 ))
 ```
 
@@ -789,7 +802,34 @@ visNetwork(min_graph$node_list, min_graph$edge_list,submain = paste("Total Struc
 
 ```
 
-Analysis here
+Examining the minimally complex graph we see quite a large reduction in the total metrics. The total structurcal complexity is 148, the total blocking factor is 55, and the total delay factor is 93.
+
+However the course with the highest centrality factor is once again STAT 230 at 110; the courses with the highest blocking factors are MATH 100 (14), MATH 101 (10), adn COSC 221 (6); the courses with the highest delay factors are MATH 100, MATH 101, MATH 200, STAT 230, COSC 221, DATA 311, STAT 303, STAT 401, STAT 403, COSC 421, DATA 407, and DATA 315 all at 5; and the courses with the greatest structural complexity are MATH 100 (19), MATH 101 (15), and COSC 221 (11).
+
+These results tell us that while upper year electives can vary and reduce the over all metric scores, there are common courses who contribute the most to complexity. Based on this restructuring is need surronding STAT 230 and COSC 221. Since STAT 230 leads in centrality by more than double across both graphs it is a course that earns increased focus and dedication of resoures. Another option for STAT 230 would be the creation of new courses to lessen its affect as a bottleneck. It is unlikely much can be down with MATH 100 and MATH 101 as they are students' first introduction to Calculus and very foundational to all courses in the curriculum though further exploration is certainlty warranted.
+
+
+Here is a full table of the metrics
+```{r}
+kable(min_graph$node_list)
+```
+
+
+The difference in elective coruses that caused the total metric scores to be so different are given below.
+
+The courses in the max graph that are not found in the min graph are:
+
+```{r}
+idx <- !(max_graph$node_list$label %in% min_graph$node_list$label)
+kable(max_graph$node_list$label[idx])
+```
+
+The courses in the min graph that are not found in the max graph are:
+
+```{r}
+idx <- !(min_graph$node_list$label %in% max_graph$node_list$label)
+kable(min_graph$node_list$label[idx])
+```
 
 ## References
 
