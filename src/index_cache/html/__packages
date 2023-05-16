@@ -16,3 +16,7 @@ networkD3
 docstring
 bnlearn
 knitr
+snow
+MonteCarlo
+slam
+Rglpk
