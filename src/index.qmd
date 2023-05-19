@@ -180,6 +180,7 @@ delay_factor <- function(edge_list, node_list) {
                                    directed = TRUE)
   paths <- list()
   
+ 
   for (v in as.numeric(node_list$id)) {
     paths <- c(paths, all_simple_paths(network, from = v, mode = "out"))
   }
@@ -248,7 +249,7 @@ blocking_factor <- function(edge_list, node_list) {
                                    vertices = node_list,
                                    directed = TRUE)
   paths <- list()
-  
+
   for (v in as.numeric(node_list$id)) {
     paths <- c(paths, all_simple_paths(network, from = v, mode = "out"))
   }
@@ -316,7 +317,7 @@ centrality_factor <- function(edge_list, node_list) {
                                    vertices = node_list,
                                    directed = TRUE)
   paths <- list()
-  
+
   for (v in as.numeric(node_list$id)) {
     paths <- c(paths, all_simple_paths(network, from = v, mode = "out"))
   }
@@ -413,72 +414,6 @@ visNetwork(node_list, edge_list) %>%
       alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc);}")
 ```
 
-##  Cruciality-Based Curriculum Balancing
-
-Slim introduces the concept of *efficient curricula* as a way to design curricula such that the most crucial courses are placed as early in a curriculum as possible [-@slim2016curricular]. The idea behind doing this is it will minimize the possibility of students not graduating on time as courses with the highest combinations of delay and blocking factors will completed first. To solve this problem an optimization model dubbed *Cruciality-Based Curriculum Balancing* (CBCB) utilizes a mix of *constraint satisfaction* and *integer linear programming* (ILP) techniques.
-
-### Solving ILPs in R
-
-We introduce a common way for solving ILPs in R based on this [guide](http://rtutorial.altervista.org/lp_solvers.html). Here is how we would solve the simple linear program
-
-$$
-\begin{align*}
-\text{maximizie } 2x_1 + 4x_2 + 3x_3 & \\
-\text{subject to } 3x_1 + 4x_2 + 2x_3 & \leq 60 \\
-2x_2 + x_2 + 2x_3 &\leq 40 \\
-x_1 + 3x_2 + 2x_3 &\leq 80 \\
-x_1, x_2, x_3 &\geq 0
-\end{align*}
-$$
-
-```{r Example ILP}
-# Load library
-library(Rglpk)
-
-# Define objective function coefficients
-obj <- c(2, 4, 3)
-
-# Define matrix of constraint coefficients
-mat <- rbind(c(3, 4, 2), c(2, 1, 2), c(1, 3, 2))
-
-# Define direction of inequality for each constraint
-dir <- c("<=", "<=", "<=")
-
-# Define the right hand side of constraints
-rhs <- c(60, 40, 80)
-
-# Solve the linear porgram. Set max to true for a maximization problems
-
-ans <- Rglpk_solve_LP(obj, mat, dir, rhs, max = TRUE)
-
-sprintf(
-  "Optimum value of %f attained at (%f,%f,%f)",
-  ans$optimum,
-  ans$solution[1],
-  ans$solution[2],
-  ans$solution[3]
-)
-```
-
-### Solving CSPs in R
-*Constraint Satisfaction Problems* (CSPs) are solved using a variety of techniques here we go through an example of solving CSPs in R
-
-```{r Example CSP Solve in R}
-# Define the objective function
-objective <- function(x) {
-  l <- max(x)
-  return(l)
-}
-
-# Set initial values
-x0 <- c(1, 2, 3, 4, 5)  # Initial values for l1 to ln
-
-# Use optim to minimize the objective function
-result <- optim(x0, objective, method = "L-BFGS-B")
-
-# Get the minimized value of l
-minimized_l <- result$value
-```
 
 ## Bayesian Networks
 
@@ -502,9 +437,9 @@ Bayesian network model selection is done through learning the graphical structur
 
 There are various algorithms to learn the structure of the BN however we opt to use *hill climbing greedy search* (hc) as done in [@slim2021restructuring]. For further information on what this algorithm does see [@scutari2009learning] and [@daly2007methods]. The general idea is that hc will use some score function while investigating candidate Bayesian networks and select the one that maximizes some set heuristic. As we are working with discrete data the heuristics available to us are the *likelihood*, *Akaike Information Criterion* (AIC), *Bayesian Information Criterion* (BIC), *Bayesian Dirichelt equivalent score* (BDE), and the *K2 score*.
 
-[@slim2021restructuring] further showcases how one may find latent nodes and investigate how the likelihood of the model changes with these hidden nodes. We attempt this in our analysis.
+[@slim2021restructuring] further showcases how one may learn the structure of a BN and calculate the likelihood of the model, then add a hidden node and calculate the new likelihood, and finally conduct a likelihood-ratio test to see if the model has improved. If the model has improved, the newly added node represents a potential course that could be included in the curriculum to reduce structural complexity and improve student performance. Note there won't be grade data for this new course so its conditional probability is calculated using *expectation-maximization* (EM).
 
-**TO DO figure out if you have to introduce your own latent variables or if there is a way to automatically learn them**
+
 
 
 ### BNs in R
@@ -535,7 +470,7 @@ visNetwork(node_list, edge_list) %>%
 ```
 
 
-## Analysis of UBCO Data Science Curriculum
+## Analysis of UBCO Data Science Major Curriculum
 
 ### Setup
 
@@ -549,7 +484,7 @@ str(ubco)
 
 With this we can construct degree pathways through our curriculum and graph them. Since there are many electives within our program there are many possible curriculum graphs. We will analyze the most and least structurally complex curricula and see what patterns emerge. 
 
-```{r Generate Curriculum Graphs}
+```{r Generate Curriculum Graphs - Major}
 # Create list for storing pathways
 Gc <- list()
 
@@ -668,8 +603,6 @@ for (i in 1:100) {
     data.frame(id = rownames(pathway), label = pathway$Course.Code)
   
   edge_list <- data.frame(from = NA, to = NA)
-  
-  node <- "DATA 410"
   
   for (node in node_list$label) {
     str <- subset(pathway, Course.Code == node)$Prerequisite
@@ -805,15 +738,15 @@ visNetwork(
   )
 ```
 
-Examining our maximally complex graph we can learn the set of key courses that are contributing most to our metrics. The total structural complexitity is 194, the total blocking factor is 80, and the total delay factor is 114.
+Examining our maximally complex graph we can learn the set of key courses that are contributing most to our metrics. The total structural complexity is 194, the total blocking factor is 80, and the total delay factor is 114.
 
-The most central node in this graph by far is STAT 230 with a centrality factor of 138. In UBCO's Data Science program is it the first statistics course many students encounter and is a preq-requisite to many 3rd and 4th year classes. Coming in at second is MATH 101 at 95. This also makes sense as it is Calculus 2 as it is a pre-requisite for STAT 230 and the Caluclus 3 class MATH 200. Finally COSC 221 is 3rd with 70. This course is discrete math and is a pre-requisite for STAT 230. This suggests as STAT 230 is so central and course that is its pre-requisite is also central.
+The most central node in this graph by far is STAT 230 with a centrality factor of 138. In UBCO's Data Science program is it the first statistics course many students encounter and is a preq-requisite to many 3rd and 4th year classes. Coming in at second is MATH 101 at 95. This also makes sense as it is Calculus 2 as it is a pre-requisite for STAT 230 and the Calculus 3 class MATH 200. Finally COSC 221 is 3rd with 70. This course is discrete math and is a pre-requisite for STAT 230. This suggests as STAT 230 is so central and course that is its pre-requisite is also central.
 
 The course with the greatest blocking factor is MATH 100 with a blocking factor of 17. This course is Calculus 1 and so it is likely unavoidable to for this course to have a high blocking factor. After all, Calulus is the foundation for many courses in a data science program and so it finds itself the root of many chains of edges.
 
-The course with the greatest delay factor is tied for MATH 100, MATH 101, STAT 230, COSC 221, DATA 311, and DATA 410. These courses find themselves a part of the longest path in the graph of length 6.
+The course with the greatest delay factor is tied for MATH 100, MATH 101, STAT 230, COSC 221, DATA 311, and DATA 410. These courses find themselves a part of the longest path in the graph of length 6. This suggests being able to take DATA 410 is difficult within this curriculum structure as it is very easy to get delayed along the pre-requisite path to this course.
 
-The course with the largest structural complexity is MATH 100 with a score of 23. This is followed by MATH 101 at 20 and COSC 221 at 14. It is interesting that STAT 230 comes at 4th with only a strucutral complexity of 12. Because MATH 100 and 101 find them selves at the root of many paths it follow that they add quite heavily to the strucutral complexity of our graph.
+The course with the largest structural complexity is MATH 100 with a score of 23. This is followed by MATH 101 at 20 and COSC 221 at 14. It is interesting that STAT 230 comes at 4th with only a strucutral complexity of 12. Because MATH 100 and 101 find them selves at the root of many paths it follow that they add quite heavily to the structural complexity of our graph.
 
 These metrics suggest a revision of pathways including STAT 230, MATH 100, MATH 101, and COSC 221.
 
@@ -900,9 +833,9 @@ visNetwork(
 
 Examining the minimally complex graph we see quite a large reduction in the total metrics. The total structurcal complexity is 148, the total blocking factor is 55, and the total delay factor is 93.
 
-However the course with the highest centrality factor is once again STAT 230 at 110; the courses with the highest blocking factors are MATH 100 (14), MATH 101 (10), adn COSC 221 (6); the courses with the highest delay factors are MATH 100, MATH 101, MATH 200, STAT 230, COSC 221, DATA 311, STAT 303, STAT 401, STAT 403, COSC 421, DATA 407, and DATA 315 all at 5; and the courses with the greatest structural complexity are MATH 100 (19), MATH 101 (15), and COSC 221 (11).
+However the course with the highest centrality factor is once again STAT 230 at 110; the courses with the highest blocking factors are MATH 100 (14), MATH 101 (10), and COSC 221 (6); the courses with the highest delay factors are MATH 100, MATH 101, MATH 200, STAT 230, COSC 221, DATA 311, STAT 303, STAT 401, STAT 403, COSC 421, DATA 407, and DATA 315 all at 5—suggesting multiple longest pathways; and the courses with the greatest structural complexity are MATH 100 (19), MATH 101 (15), and COSC 221 (11).
 
-These results tell us that while upper year electives can vary and reduce the over all metric scores, there are common courses who contribute the most to complexity. Based on this restructuring is need surronding STAT 230 and COSC 221. Since STAT 230 leads in centrality by more than double across both graphs it is a course that earns increased focus and dedication of resoures. Another option for STAT 230 would be the creation of new courses to lessen its affect as a bottleneck. It is unlikely much can be down with MATH 100 and MATH 101 as they are students' first introduction to Calculus and very foundational to all courses in the curriculum though further exploration is certainlty warranted.
+These results tell us that while upper year electives can vary and reduce the over all metric scores, there are common courses who contribute the most to complexity. Based on this restructuring is need surrounding STAT 230 and COSC 221. Since STAT 230 leads in centrality by more than double across both graphs it is a course that earns increased focus and dedication of resources. Another option for STAT 230 would be the creation of new courses to lessen its affect as a bottleneck. It is unlikely much can be down with MATH 100 and MATH 101 as they are students' first introduction to Calculus and very foundational to all courses in the curriculum though further exploration is certainly warranted.
 
 
 Here is a full table of the metrics
@@ -927,31 +860,571 @@ idx <- !(min_graph$node_list$label %in% max_graph$node_list$label)
 kable(min_graph$node_list$label[idx])
 ```
 
-### Improving Curricula Structure
+## Analysis of UBCO Data Science Minor Curriculum
+### With prereqs on
+#### Setup
 
-#### Implementation of Patterns
-
-#### Efficient Curricula and Comparison Through Simulation
-
-As outlined in [@slim2016curricular] we may use  Monte Carlo simulations to see if the different structural complexities correlate to different graduation rates. We can then use constraint satisfication and integer linear programming to generate efficient curricula and see if graduation rates improve.
-
-**TODO get access to CASL or make it yourself**
-
-**TODO then run simulations on max and min curriculum as see what the difference is**
-
-##### ILP to Generate Efficient Curricula
-
-**TODO use ILP to get an efficient curriculum and see how they compare to max and min graphs through simulations**
-
-```{r ILP to Generate Efficient Curriculum}
-library(Rglpk)
+```{r Read in data}
+# Read in data
+ubco <- read.csv("..\\data\\UBCO\\UBCO_Course_Calendar.csv")
+str(ubco)
 ```
 
-##### Constraint Satisfaction to Generate Efficient Curricula
+```{r Generate Curriculum Graphs - Minor}
+# Create list for storing pathways
+Gc <- list()
 
-**TODO use constraint satisfaction to get an efficient curriculum and see how they compare to max and min graphs through simulations**
+for (i in 1:1000) {
+  pathway <-
+    data.frame(
+      Course.Code = NA,
+      Course.Name = NA,
+      Course.Description = NA,
+      Prerequisite = NA,
+      Corequisite = NA,
+      Equivalents = NA
+    )
+  # 30 Credits from:
+  
+  # Required courses
+  pathway <- rbind(pathway, subset(ubco, Course.Code %in% c("DATA 101","STAT 230", "DATA 301","DATA 311")))
+  
+  up_to_6_creds <- c("MATH 100", "MATH 101", "MATH 200", "MATH 221", "COSC 111", "COSC 121", "COSC 221", "COSC 222", "ECON 102", "APSC", "BIOL 202", "PSYO 373", "APSC 254")
+  courses <- sample(up_to_6_creds,2)
+  pathway <- rbind(pathway, subset(ubco, Course.Code %in% courses))
+  
+upper_year_data <-
+    c("DATA 310", "DATA 315", "DATA 405", "DATA 407", "DATA 410")
+  max_3_cosc <- c("COSC 304","COSC 322","COSC 329","COSC 344", "COSC 421")
+  max_6_stat <- c("STAT 303","STAT 401")
+  cosc_cred <- 0
+  stat_cred <- 0
+  total_cred <- 0
+  
+  while (total_cred < 13) {
+    x <- sample(1:3, 1)
+    
+    if (x == 1) {
+      courses <- sample(upper_year_data, 1)
+      if (sum(courses %in% pathway$Course.Code)==0) {
+        pathway <-
+          rbind(pathway, subset(ubco, Course.Code %in% courses))
+        total_cred <- total_cred + 3
+      }
+      
+    } else if (x == 2 & cosc_cred != 3) {
+      courses <- sample(max_3_cosc, 1)
+      if (sum(courses %in% pathway$Course.Code)==0) {
+        pathway <-
+          rbind(pathway, subset(ubco, Course.Code %in% courses))
+        cosc_cred <- 3
+        total_cred <- total_cred + 3
+      }
+    } else if (x == 3 & stat_cred < 7) {
+      courses <- sample(max_6_stat)
+      if (sum(courses %in% pathway$Course.Code)==0) {
+        pathway <-
+          rbind(pathway, subset(ubco, Course.Code %in% courses))
+        stat_cred <- stat_cred + 3
+        total_cred <- total_cred + 3
+      }
+    }
+  }
+  
+  pathway <- na.omit(pathway)
+  prereqs <- unlist(str_extract_all(subset(ubco,Course.Code %in% pathway$Course.Code)$Prerequisite, "[A-Z]{4} [0-9]{3}"))
+  
+  # TODO while this works, its an ugly solution
+  for (i in 1:50) {
+    prereqs <- c(prereqs,unlist(str_extract_all(subset(ubco,Course.Code %in% prereqs)$Prerequisite, "[A-Z]{4} [0-9]{3}")))
+  }
+  
+  pathway <- rbind(pathway, subset(ubco, Course.Code %in% prereqs))
+  pathway <- pathway[!duplicated(pathway),]
+  rownames(pathway) <- 1:nrow(pathway)
+  
+  # Construct node and edge list
+  
+  node_list <-
+    data.frame(id = rownames(pathway), label = pathway$Course.Code)
+  
+  edge_list <- data.frame(from = NA, to = NA)
+  
+  for (node in node_list$label) {
+    str <- subset(pathway, Course.Code == node)$Prerequisite
+    course_code <- ""
+    if (str != "") {
+      course_code <- str_extract_all(str, "[A-Z]{4} [0-9]{3}")[[1]]
+    }
+    
+    from <- rownames(subset(pathway, Course.Code == node))
+    to <- rownames(subset(pathway, Course.Code %in% course_code))
+    if (length(to) > 1) {
+      for (id in to) {
+        edge_list <- rbind(edge_list, data.frame(from = id, to = from))
+      }
+    } else {
+      edge_list <- rbind(edge_list, data.frame(from = to[1], to = from))
+    }
+  }
+  edge_list <- na.omit(edge_list)
+  
+  # Get structural complexity
+  
+  sc <- structural_complexity(edge_list, node_list)
+  
+  # Store in list
+  results <-
+    list(node_list = node_list,
+         edge_list = edge_list,
+         sc = sc)
+  
+  Gc <- c(Gc, list(results))
+}
+```
 
-#### Bayesian Networks for Latent Node Discovery and GPA Prediction
+```{r Extract Max and Min Graphs - Minor}
+# Initialize variables for maximum and minimum values
+max_total <- -Inf
+min_total <- Inf
+max_index <- NULL
+min_index <- NULL
+
+# Iterate through Gc to find max and min indices
+for (i in seq_along(Gc)) {
+  total <- Gc[[i]]$sc$total
+  if (total > max_total) {
+    max_total <- total
+    max_index <- i
+  }
+  if (total < min_total) {
+    min_total <- total
+    min_index <- i
+  }
+}
+
+# Display the indices
+print(paste("Index of maximum sc$total:", max_index))
+print(paste("Index of minimum sc$total:", min_index))
+```
+
+#### Maximum Structural Complexity
+
+```{r Generate Node Coords Max}
+# Specify node locations
+coords <- matrix(ncol = 2, byrow = T, data = c(
+    1, 0,
+    1, 1,
+    1, 2,
+    1, 3,
+    1, 4, #
+    2, 0,
+    2, 1,
+    2, 2,
+    2, 3,
+    2, 4, #
+    3, 0,
+    3, 1,
+    3, 2,
+    3, 3,
+    3, 4, #
+    4, 0,
+    4, 1,
+    4, 2,
+    4, 3,
+    4, 4, #
+    5, 0,
+    5, 1,
+    5, 2,
+    5, 3,
+    5, 4, #
+    6, 0,
+    6, 1,
+    6, 2
+))
+```
+
+```{r}
+# node_list <- Gc[[max_index]]$node_list
+# edge_list <- Gc[[max_index]]$edge_list
+# 
+# sc_df <- structural_complexity(edge_list,node_list)
+# cf_df <- centrality_factor(edge_list,node_list)
+# bf_df <- blocking_factor(edge_list,node_list)
+# df_df <- delay_factor(edge_list,node_list)
+# 
+# node_list <- left_join(node_list, sc_df$bynode, by = c("id" = "id"))
+# node_list <- left_join(node_list, cf_df, by = c("id" = "id"))
+# node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "id"))
+# node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
+# max_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
+# 
+# save(max_graph, file = "./maxGraph_minor.RData")
+
+load("..\\data\\rdata\\maxGraph_minor.RData")
+
+visNetwork(
+  max_graph$node_list,
+  max_graph$edge_list,
+  submain = paste(
+    "Total Structural Complexity:",
+    max_graph$sc_total,
+    "Total Blocking Factor:",
+    max_graph$bf_total,
+    "Total Delay Factor:",
+    max_graph$df_total
+  )
+) %>%
+  visEdges(arrows = "to") %>%
+  visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
+  visEvents(
+    selectNode = "function(properties) {
+      alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc + ' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf + ' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf + ' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}"
+  )
+```
+
+Highest cruciality: STAT 230 - 116
+
+Highest blocking factor: MATH 100 - 12
+
+Highest delay factor: STAT 230, DATA 311, PSYO 373, DATA 410, MATH 100, MATH 101, COSC 221, PSYO 372, PSYO 270, PSYO 271, PSYO 111, PSYO 121 - 6
+
+#### Minimum Structural Complexity
+
+```{r Generate Node Coords Min - Minor}
+# Specify node locations
+coords <- matrix(ncol = 2, byrow = T, data = c(
+    1, 0,
+    1, 1,
+    1, 2,
+    1, 3,
+    1, 4, #
+    2, 0,
+    2, 1,
+    2, 2,
+    2, 3,
+    2, 4, #
+    3, 0,
+    3, 1,
+    3, 2,
+    3, 3,
+    3, 4
+))
+```
+
+```{r Visualize Min SC - Minor}
+# node_list <- Gc[[min_index]]$node_list
+# edge_list <- Gc[[min_index]]$edge_list
+# 
+# sc_df <- structural_complexity(edge_list,node_list)
+# cf_df <- centrality_factor(edge_list,node_list)
+# bf_df <- blocking_factor(edge_list,node_list)
+# df_df <- delay_factor(edge_list,node_list)
+# 
+# node_list <- left_join(node_list, sc_df$bynode, by = c("id" = "id"))
+# node_list <- left_join(node_list, cf_df, by = c("id" = "id"))
+# node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "id"))
+# node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
+# min_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
+# 
+# save(min_graph, file = "./mingraph_minor.RData")
+
+load("..\\data\\rdata\\minGraph_minor.RData")
+
+
+visNetwork(
+  min_graph$node_list,
+  min_graph$edge_list,
+  submain = paste(
+    "Total Structural Complexity:",
+    min_graph$sc_total,
+    "Total Blocking Factor:",
+    min_graph$bf_total,
+    "Total Delay Factor:",
+    min_graph$df_total
+  )
+) %>%
+  visEdges(arrows = "to") %>%
+  visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
+  visEvents(
+    selectNode = "function(properties) {
+      alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc + ' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf + ' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf + ' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}"
+  )
+
+
+```
+
+Highest cruciality: STAT 230 - 110
+
+Highest blocking factor: MATH 100 - 10
+
+Highest delay factor: STAT 230, DATA 311, MATH 200, STAT 303, MATH 100, MATH 101, STAT 401, DATA 407,DATA 315, DATA 405, MATH 101 - 5
+
+### With prereqs off
+#### Setup
+
+```{r Read in data}
+# Read in data
+ubco <- read.csv("..\\data\\UBCO\\UBCO_Course_Calendar.csv")
+str(ubco)
+```
+
+```{r Generate Curriculum Graphs - Minor}
+
+# Create list for storing pathways
+Gc <- list()
+
+for (i in 1:1000) {
+  pathway <-
+    data.frame(
+      Course.Code = NA,
+      Course.Name = NA,
+      Course.Description = NA,
+      Prerequisite = NA,
+      Corequisite = NA,
+      Equivalents = NA
+    )
+  # 30 Credits from:
+  
+  # Required courses
+  pathway <- rbind(pathway, subset(ubco, Course.Code %in% c("DATA 101","STAT 230", "DATA 301","DATA 311")))
+  
+  up_to_6_creds <- c("MATH 100", "MATH 101", "MATH 200", "MATH 221", "COSC 111", "COSC 121", "COSC 221", "COSC 222", "ECON 102", "APSC", "BIOL 202", "PSYO 373", "APSC 254")
+  courses <- sample(up_to_6_creds,2)
+  pathway <- rbind(pathway, subset(ubco, Course.Code %in% courses))
+  
+upper_year_data <-
+    c("DATA 310", "DATA 315", "DATA 405", "DATA 407", "DATA 410")
+  max_3_cosc <- c("COSC 304","COSC 322","COSC 329","COSC 344", "COSC 421")
+  max_6_stat <- c("STAT 303","STAT 401")
+  cosc_cred <- 0
+  stat_cred <- 0
+  total_cred <- 0
+  
+  while (total_cred != 12) {
+    x <- sample(1:3, 1)
+    
+    if (x == 1 & total_cred != 12) {
+      courses <- sample(upper_year_data, 1)
+      if (sum(courses %in% pathway$Course.Code)==0) {
+        pathway <-
+          rbind(pathway, subset(ubco, Course.Code %in% courses))
+        total_cred <- total_cred + 3
+      }
+      
+    } else if (x == 2 & cosc_cred != 3) {
+      courses <- sample(max_3_cosc, 1)
+      if (sum(courses %in% pathway$Course.Code)==0) {
+        pathway <-
+          rbind(pathway, subset(ubco, Course.Code %in% courses))
+        cosc_cred <- 3
+        total_cred <- total_cred + 3
+      }
+    } else if (x == 3 & stat_cred != 6) {
+      courses <- sample(max_6_stat)
+      if (sum(courses %in% pathway$Course.Code)==0) {
+        pathway <-
+          rbind(pathway, subset(ubco, Course.Code %in% courses))
+        stat_cred <- stat_cred + 3
+        total_cred <- total_cred + 3
+      }
+    }
+  }
+  
+  pathway <- na.omit(pathway)
+  pathway <- pathway[!duplicated(pathway),]
+  rownames(pathway) <- 1:nrow(pathway)
+  
+  # Construct node and edge list
+  
+  node_list <-
+    data.frame(id = rownames(pathway), label = pathway$Course.Code)
+  
+  edge_list <- data.frame(from = NA, to = NA)
+  
+  for (node in node_list$label) {
+    str <- subset(pathway, Course.Code == node)$Prerequisite
+    course_code <- ""
+    if (str != "") {
+      course_code <- str_extract_all(str, "[A-Z]{4} [0-9]{3}")[[1]]
+    }
+    
+    from <- rownames(subset(pathway, Course.Code == node))
+    to <- rownames(subset(pathway, Course.Code %in% course_code))
+    if (length(to) > 1) {
+      for (id in to) {
+        edge_list <- rbind(edge_list, data.frame(from = id, to = from))
+      }
+    } else {
+      edge_list <- rbind(edge_list, data.frame(from = to[1], to = from))
+    }
+  }
+  edge_list <- na.omit(edge_list)
+  
+  # Get structural complexity
+  
+  sc <- structural_complexity(edge_list, node_list)
+  
+  # Store in list
+  results <-
+    list(node_list = node_list,
+         edge_list = edge_list,
+         sc = sc)
+  
+  Gc <- c(Gc, list(results))
+}
+```
+
+```{r Extract Max and Min Graphs - Minor}
+# Initialize variables for maximum and minimum values
+max_total <- -Inf
+min_total <- Inf
+max_index <- NULL
+min_index <- NULL
+
+# Iterate through Gc to find max and min indices
+for (i in seq_along(Gc)) {
+  total <- Gc[[i]]$sc$total
+  if (total > max_total) {
+    max_total <- total
+    max_index <- i
+  }
+  if (total < min_total) {
+    min_total <- total
+    min_index <- i
+  }
+}
+
+# Display the indices
+print(paste("Index of maximum sc$total:", max_index))
+print(paste("Index of minimum sc$total:", min_index))
+```
+
+#### Maximum Structural Complexity
+
+```{r Generate Node Coords Max}
+# Specify node locations
+coords <- matrix(ncol = 2, byrow = T, data = c(
+    1, 0,
+    1, 1,
+    1, 2,
+    1, 3,
+    1, 4, #
+    2, 0,
+    2, 1,
+    2, 2,
+    2, 3,
+    3, 0,
+    3, 1
+))
+```
+
+```{r}
+#  node_list <- Gc[[max_index]]$node_list
+#  edge_list <- Gc[[max_index]]$edge_list
+# 
+#  sc_df <- structural_complexity(edge_list,node_list)
+#  cf_df <- centrality_factor(edge_list,node_list)
+#  bf_df <- blocking_factor(edge_list,node_list)
+#  df_df <- delay_factor(edge_list,node_list)
+# 
+#  node_list <- left_join(node_list, sc_df$bynode, by = c("id" = "id"))
+# node_list <- left_join(node_list, cf_df, by = c("id" = "id"))
+#  node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "id"))
+#  node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
+# max_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
+# 
+# save(max_graph, file = "./max_graph_minor_prereq_off.RData")
+
+load("..\\data\\rdata\\max_graph_minor_prereq_off.RData")
+
+
+visNetwork(
+  max_graph$node_list,
+  max_graph$edge_list,
+  submain = paste(
+    "Total Structural Complexity:",
+    max_graph$sc_total,
+    "Total Blocking Factor:",
+    max_graph$bf_total,
+    "Total Delay Factor:",
+    max_graph$df_total
+  )
+) %>%
+  visEdges(arrows = "to") %>%
+  visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
+  visEvents(
+    selectNode = "function(properties) {
+      alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc + ' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf + ' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf + ' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}"
+  )
+```
+
+Highest cruciality: STAT 230 - 69
+
+Highest blocking factor: MATH 101 - 7
+
+Highest delay factor: STAT 230, DATA 311, MATH 101, COSC 221, DATA 410 - 5
+
+#### Minimum Structural Complexity
+
+```{r Generate Node Coords Min - Minor}
+# Specify node locations
+coords <- matrix(ncol = 2, byrow = T, data = c(
+    1, 0,
+    1, 1,
+    1, 2,
+    1, 3,
+    1, 4, #
+    2, 0,
+    2, 1,
+    2, 2,
+    2, 3
+))
+```
+
+```{r Visualize Min SC - Minor}
+node_list <- Gc[[min_index]]$node_list
+edge_list <- Gc[[min_index]]$edge_list
+
+sc_df <- structural_complexity(edge_list,node_list)
+cf_df <- centrality_factor(edge_list,node_list)
+bf_df <- blocking_factor(edge_list,node_list)
+df_df <- delay_factor(edge_list,node_list)
+
+node_list <- left_join(node_list, sc_df$bynode, by = c("id" = "id"))
+node_list <- left_join(node_list, cf_df, by = c("id" = "id"))
+node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "id"))
+node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
+min_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
+
+visNetwork(
+  min_graph$node_list,
+  min_graph$edge_list,
+  submain = paste(
+    "Total Structural Complexity:",
+    min_graph$sc_total,
+    "Total Blocking Factor:",
+    min_graph$bf_total,
+    "Total Delay Factor:",
+    min_graph$df_total
+  )
+) %>%
+  visEdges(arrows = "to") %>%
+  visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
+  visEvents(
+    selectNode = "function(properties) {
+      alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc + ' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf + ' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf + ' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}"
+  )
+
+
+```
+
+Highest cruciality: STAT 230 - 12
+
+Highest blocking factor: DATA 101 - 5
+
+Highest delay factor: DATA 101, STAT 230, DATA 311, DATA 405, DATA 315, DATA 310 - 3
+
 
 ## References
 
