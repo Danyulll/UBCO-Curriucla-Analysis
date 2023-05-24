@@ -485,7 +485,7 @@ With this we can construct degree pathways through our curriculum and graph them
 
 ### Maximum Structural Complexity
 
-```{r Generate Node Coords Max}
+```{r Generate Max Node Coords - Major}
 # Specify node locations
 coords <- matrix(ncol = 2, byrow = T, data = c(
     1, 0,
@@ -521,7 +521,7 @@ coords <- matrix(ncol = 2, byrow = T, data = c(
 ```
 
 
-```{r Visualize Max SC}
+```{r Visualize Max Graph - Major}
 load("..\\data\\rdata\\maxGraph.RData")
 
 visNetwork(
@@ -557,13 +557,13 @@ The course with the largest structural complexity is MATH 100 with a score of 23
 These metrics suggest a revision of pathways including STAT 230, MATH 100, MATH 101, and COSC 221.
 
 Here is a full table of the metrics
-```{r printing max graph metrics}
+```{r Print Max Graph Metrics - Major}
 kable(max_graph$node_list)
 ```
 
 ### Minimum Structural Complexity
 
-```{r Generate Node Coords Min}
+```{r Generate Min Node Coords - Major}
 # Specify node locations
 coords <- matrix(ncol = 2, byrow = T, data = c(
     1, 0,
@@ -598,7 +598,7 @@ coords <- matrix(ncol = 2, byrow = T, data = c(
 ))
 ```
 
-```{r Visualize Min SC}
+```{r Visualize Min Graph - Major}
 load("../data/rdata/minGraph.RData")
 
 visNetwork(
@@ -629,7 +629,7 @@ These results tell us that while upper year electives can vary and reduce the ov
 
 
 Here is a full table of the metrics
-```{r printing min graph metrics}
+```{r Print Min Graph Metrics - Major}
 kable(min_graph$node_list)
 ```
 
@@ -638,23 +638,25 @@ The difference in elective coruses that caused the total metric scores to be so 
 
 The courses in the max graph that are not found in the min graph are:
 
-```{r Printing max graph unique courses}
+```{r Print Max Unique Courses - Major}
 idx <- !(max_graph$node_list$label %in% min_graph$node_list$label)
-kable(max_graph$node_list$label[idx])
+kable(data.frame(Courses=max_graph$node_list$label[idx]))
 ```
 
 The courses in the min graph that are not found in the max graph are:
 
-```{r Printing min graph unique courses}
+```{r Print Min Unique Courses - Major}
 idx <- !(min_graph$node_list$label %in% max_graph$node_list$label)
-kable(min_graph$node_list$label[idx])
+kable(data.frame(Courses=min_graph$node_list$label[idx]))
 ```
 
 ## Analysis of UBCO Data Science Minor Curriculum
 
+Data Science minors are far more common at UBCO than the major. Therefore examination of the minor could prove fruitful as there will be a larger data pool for our machine learning models and restructuring of the minor will impact more students. We explore the maximally and minimally complex minor curriculum graphs. Minors are only 30 credits simply sampling 30 credits worth of courses will exclude important prerequisite courses. We still wish to examine how courses flow into one another therefore we sample 30 credits of minor courses and represent these nodes as circles. We then add triangles for prerequisite courses that are not counted towards the minor but would still be required to take if the student wished to complete the minor counting courses.
+
 #### Maximum Structural Complexity
 
-```{r Generate Node Coords Max - Minor prereq on}
+```{r Generate Max Node Coords - Minor}
 # Specify node locations
 coords <- matrix(ncol = 2, byrow = T, data = c(
     1, 0,
@@ -685,7 +687,7 @@ coords <- matrix(ncol = 2, byrow = T, data = c(
 ))
 ```
 
-```{r visualize max graph prereq on}
+```{r Visualize Max Graph - Minor}
 load("..\\data\\rdata\\maxGraph_minor.RData")
 
 visNetwork(
@@ -711,9 +713,23 @@ visNetwork(
   visLegend(width = 0.1, position = "right", main = "Is a Preqreq in the Minor")
 ```
 
+The maximally complex minor graph has a total structural complexity of 188, a total blocking factor of 67, and a total delay factor of 121. The minor represented in this graph is overly complex and likely would never appear in a student's degree. Its structure is an artifact of PSYO 373's and APSC 254;s inclusion in the minor. PSYO 373 is added so Psychology students can have access to the minor however, it forces many PYSO prerequisites to be included in the graph. Similarly for APSC 254, its inclusion is to make the minor available to engineering students though once again it inflates the total metric scores as in order to take it there are many engineering specific courses required. There is very little chance a student would take both PSYO 373 and APSC 254 as minor counting credits. With that being said it could still be interesting to see how the minor counting courses act with respect to their various factors.
+
+The highest centrality node in the graph is STAT 230 with 116 followed by MATH 101 at 74.
+
+The most crucial node is MATH 100 at 17 and the second most crucial node is MATH 101 at 15. These are also the highest blocking factor nodes at 11 and 9 respectively.
+
+The greatest delay factor is 6 with the following courses being a part of the longest pathways: STAT 230, DATRA 311, PSYO 373, DATA 410, MATH 100, MATH 101, COSC 221, PSYO 372. PSYO 270, PSYO 271, PSYO 111, PSYO 121.
+
+A full list of these courses and their metrics is given below.
+
+```{r Print Max Graph Metrics - Minor}
+kable(max_graph$node_list)
+```
+
 #### Minimum Structural Complexity
 
-```{r Generate Node Coords Min - Minor}
+```{r Generate Min Node Coords - Minor}
 # Specify node locations
 coords <- matrix(ncol = 2, byrow = T, data = c(
     1, 0,
@@ -732,7 +748,7 @@ coords <- matrix(ncol = 2, byrow = T, data = c(
 ))
 ```
 
-```{r Visualize Min SC - Minor}
+```{r Visualize Min Graph - Minor}
 
 load("..\\data\\rdata\\minGraph_minor.RData")
 
@@ -760,14 +776,43 @@ visNetwork(
   visLegend(width = 0.1, position = "right", main = "Is a Preqreq in the Minor")
 ```
 
+The minimally complex minor graph has a total structural complexity of 80, a total blocking factor of 29, and a total delay factor of 51. This graph would be far more common for STEM students.
+
+The most central node is STAT 230 with a centrality factor of 66 followed by MATH 101 with a factor fo 44.
+
+The most crucial nodes are MATH 100 and MATH 101 with a cruciality of 13 and 12 respectively. They also hold the highest blocking factors of 8 and 7 respectively. 
+
+The greatest delay factor is 5 for the following courses: STAT 230, COSC 221, DATA 405, DATA 315, MATH 100, and MATH 101.
+
+A full list of nodes and their metrics is printed below.
+
+```{r Print Min Graph Metrics - Minor}
+kable(min_graph$node_list)
+```
+
+The difference in elective courses that caused the total metric scores to be so different are given below.
+
+The courses in the max graph that are not found in the min graph are:
+
+```{r Print Max Unique Courses - Minor}
+idx <- !(max_graph$node_list$label %in% min_graph$node_list$label)
+kable(data.frame(Courses=max_graph$node_list$label[idx]))
+```
+
+The courses in the min graph that are not found in the max graph are:
+
+```{r Print Min Unique Courses - Minor}
+idx <- !(min_graph$node_list$label %in% max_graph$node_list$label)
+kable(data.frame(Courses=min_graph$node_list$label[idx]))
+```
 
 ## Creation of Math Stream
 
-Including MATH 409 increases structural complexity drastically as it requires a host of pre-requisite course not already available within the Data Science major. This suggests the possibility of a mathematics stream within Data Science where 2nd and 3rd year math courses would be made mandatory. We investigate the structure of a such a program below.
+Including MATH 409 increases structural complexity drastically as it requires a host of pre-requisite course not already available within the Data Science major. This suggests the possibility of a mathematics stream within Data Science where 2nd and 3rd year math courses would be made mandatory. We investigate the structure of a such a program below. Again due to graph variance we examine the most and least structurally complex graphs.
 
 ### Maximum Structural Complexity
 
-```{r Generate Node Coords Max - MATH}
+```{r Generate Max Node Coords - Math}
 # Specify node locations
 coords <- matrix(ncol = 2, byrow = T, data = c(
     1, 0,
@@ -797,12 +842,14 @@ coords <- matrix(ncol = 2, byrow = T, data = c(
     5, 4, #
     6, 0,
     6, 1,
-    6, 2
+    6, 2,
+    6, 3,
+    6, 4
 ))
 ```
 
 
-```{r Visualize Max SC - MATH}
+```{r Visualize Max Graph - Math}
 load("..\\data\\rdata\\maxGraph_math.RData")
 
 visNetwork(
@@ -825,22 +872,23 @@ visNetwork(
   )
 ```
 
-Highest centrality: STAT 230 (116), MATH 101 (104)
+Beginning with our maximally structurally complex graph we have a total structural complexity of 192, total blocking factor of 77, and a total delay factor of 115.
 
-Highest cruciality: MATH 100 (23), MATH 101 (19)
+Our most central course is once again STAT 230 with a centrality factor of 116 however MATH 101 has closed the gap quite well and is at 107. This values are relatively quite close to each other where in previous graphs STAT 230 greatly exceeded any other node's centrality.
 
-Highest blocking factor: MATH 100 (17), MATH 101 (13)
+The highest cruciality is MATH 100 with 24 and in second is MATH 101 with 20. As this is a math stream the importance of the early foundation calculus courses has increased. They act as a prerequisite to many courses and are the source nodes for many pathways which acts to increase these metrics. Unsurprisingly these courses also hold the highest blocking factors of 18 and 14 for MATH 100 and 101 respectively.
 
-Highest delay factor: MATH 100, MATH 101, STAT 230, COSC 221, DATA 311, DATA 410 (6)
+The highest delay factor is 6 for the following courses: MATH 100, MATH 101, STAT 230, COSC 221, DATA 311, DATA 410. This longest path is consistent with what we view previously in the normal DS major analysis.
 
+A full list of nodes and their metrics is printed below.
 
-```{r printing max graph metrics - MATH}
+```{r Print Max Graph Metrics - Math}
 kable(max_graph$node_list)
 ```
 
 ### Minimum Structural Complexity
 
-```{r Generate Node Coords Min - MATH}
+```{r Generate Min Node Coords - Math}
 # Specify node locations
 coords <- matrix(ncol = 2, byrow = T, data = c(
     1, 0,
@@ -870,11 +918,12 @@ coords <- matrix(ncol = 2, byrow = T, data = c(
     6, 0,
     6, 1,
     6, 2, 
-    6, 3 
+    6, 3,
+    6,4
 ))
 ```
 
-```{r Visualize Min SC - MATH}
+```{r Visualize Min Graph - Math}
 load("../data/rdata/minGraph_math.RData")
 
 visNetwork(
@@ -897,15 +946,17 @@ visNetwork(
   )
 ```
 
-Highest centrality: MATH 101 (79), STAT 230 (66)
+Examining our minimally structurally complex graph we have a total structural complexity of 166, total blocking factor of 63, and a total delay factor of 103.
 
-Highest cruciality: MATH 100 (21), MATH 101 (17)
+Interestingly our most central node becomes MATH 10 at 82 followed by STAT 230 at 66. MATH 100 exceeding STAT 230 is likely a result of the reduction is upper year DATA course like 410 in favor of STAT courses like 400 and 403. Removing these DATA courses reduced the amount of paths through STAT 230. AS we added many more math courses the number of long paths through MATH 101 has increased. Thus we find ourselves with a curriculum where MATH 101 is most central.
 
-Highest blocking factor: MATH 100 (16), MATH 101 (12)
+The highest crucialities once again are MATH 100 with 22 and MATH 101 with 18. These courses are also the highest blocking factors at 17 and 13 respectively. This further confirms that in a MATH stream failing to succeed in these introductory calculus courses will have long lasting effects.
+S
+The highest delay factor is 5 and there are many courses with this delay factor as it is a common path length. These courses are MATH 100, MATH 101, MATH 200, STAT 230, COSC 221, DATA 311, STAT 303, STAT 403, MATH 409, DATA 407, DATA 315, MATH 319, MATH 225.
 
-Highest delay factor: MATH 100, MATH 101, MATH 200, STAT 230, COSC 221, DATA 311, STAT 303, STAT 403, STAT 406, DATA 407, MATH 319, MATH 225 (5)
+A full list of nodes and their metrics is printed below.
 
-```{r printing min graph metrics - MATH}
+```{r Print Min Graph Metrics - Math}
 kable(min_graph$node_list)
 ```
 
@@ -913,16 +964,16 @@ The difference in elective courses that caused the total metric scores to be so 
 
 The courses in the max graph that are not found in the min graph are:
 
-```{r Printing max graph unique courses - MATH}
+```{r Print Max Unique Courses - Math}
 idx <- !(max_graph$node_list$label %in% min_graph$node_list$label)
-kable(max_graph$node_list$label[idx])
+kable(data.frame(Courses=max_graph$node_list$label[idx]))
 ```
 
 The courses in the min graph that are not found in the max graph are:
 
-```{r Printing min graph unique courses - MATH}
+```{r Print Min Unique Courses - Math}
 idx <- !(min_graph$node_list$label %in% max_graph$node_list$label)
-kable(min_graph$node_list$label[idx])
+kable(data.frame(Courses=min_graph$node_list$label[idx]))
 ```
 
 ## References

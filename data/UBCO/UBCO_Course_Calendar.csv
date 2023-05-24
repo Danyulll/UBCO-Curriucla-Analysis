@@ -65,3 +65,4 @@ APSC 254,Instrumentation and Data Analysis,"Data acquisition, sensors, instrumen
 APSC 173,Engineering Analysis II,"Integrals and transcendental functions, techniques of integration, applications of integration, polar coordinates, infinite sequences and series, vectors and the geometry of space, and partial derivatives.",APSC 172,,
 APSC 172,Engineering Analysis I,"Functions, limits, differentiation, applications of derivatives, integration, applications of definite integrals.",,,
 APSC 178,"Electricity, Magnetism, and Waves","Electric fields and forces, electric potential, capacitance, DC circuits, magnetic fields and forces, Faraday's law, inductance, waves, light, and optics.",APSC 172,APSC 173,
+MATH 220,Mathematical Proof,"Sets and functions; induction; cardinality; properties of the real numbers; sequences, series, and limits. Logic, structure, style, and clarity of proofs emphasized throughout.",MATH 101,,

@@ -353,7 +353,7 @@ node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "id"))
 node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
 max_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
 
-save(max_graph, file = ".\\data\\rdata\\maxGraph.RData")
+# save(max_graph, file = ".\\data\\rdata\\maxGraph.RData")
 
 # Create Min Graph
 
@@ -372,7 +372,7 @@ node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
 
 min_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
 
-save(min_graph, file = ".\\data\\rdata\\minGraph.RData")
+# save(min_graph, file = ".\\data\\rdata\\minGraph.RData")
 
 
 ###########################
@@ -529,7 +529,7 @@ node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "id"))
 node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
 max_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
 
-save(max_graph, file = ".\\data\\rdata\\maxGraph_minor.RData")
+# save(max_graph, file = ".\\data\\rdata\\maxGraph_minor.RData")
 
 node_list <- Gc[[min_index]]$node_list
 edge_list <- Gc[[min_index]]$edge_list
@@ -545,7 +545,7 @@ node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "id"))
 node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
 min_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
 
-save(min_graph, file = ".\\data\\rdata\\mingraph_minor.RData")
+# save(min_graph, file = ".\\data\\rdata\\mingraph_minor.RData")
 
 ###########################
 ### DS Math Stream Sampler
@@ -591,7 +591,7 @@ for (i in 1:1000) {
       ),
       2
     )
-    pathway <- rbind(pathway, subset(ubco, Course.Code %in% "ENGL 109"))
+    pathway <- rbind(pathway, subset(ubco, Course.Code %in% samp))
   }
   
   
@@ -611,7 +611,8 @@ for (i in 1:1000) {
                          "MATH 221",
                          "STAT 230",
                          "COSC 221",
-                         "COSC 222")
+                         "COSC 222",
+                         "MATH 220")
     ))
   
   
@@ -730,7 +731,7 @@ node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "id"))
 node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
 max_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
 
-save(max_graph, file = ".\\data\\rdata\\maxGraph_math.RData")
+# save(max_graph, file = ".\\data\\rdata\\maxGraph_math.RData")
 
 node_list <- Gc[[min_index]]$node_list
 edge_list <- Gc[[min_index]]$edge_list
@@ -747,4 +748,4 @@ node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
 
 min_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
 
-save(min_graph, file = ".\\data\\rdata\\minGraph_math.RData")
+# save(min_graph, file = ".\\data\\rdata\\minGraph_math.RData")
