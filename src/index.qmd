@@ -440,34 +440,307 @@ There are various algorithms to learn the structure of the BN however we opt to 
 [@slim2021restructuring] further showcases how one may learn the structure of a BN and calculate the likelihood of the model, then add a hidden node and calculate the new likelihood, and finally conduct a likelihood-ratio test to see if the model has improved. If the model has improved, the newly added node represents a potential course that could be included in the curriculum to reduce structural complexity and improve student performance. Note there won't be grade data for this new course so its conditional probability is calculated using *expectation-maximization* (EM).
 
 
+### Bayesian Networks in R
+
+#### Creating Bayesian Networks
+
+*bnlearn* is a popular package for using BNs. We now run through an example to demonstrate its use. Many useful examples are available [here](https://www.bnlearn.com/examples/). We opt for only exploring methods for discrete data as our use case is discrete.
+
+There are various ways to form a Bayesian network. One way is to specify the edge list directly. In the context of Curricular Analytics  we may simply uses all requisite edges in a Curriculum graph as the priors. This will restrict casual edges to being on prerequisite relationships. While this assumption is likely not entirely true, as a course like MATH 100 may influence many courses down the line other than MATH 101, this restriction allows us to use a smaller data set. Here we demonstrate how to construct a BN using priors in R on a curriculum with dummy grade data. For the sake of this example I assume there will be no failing grades in this graph. To deal with this possibility one would have to make use of Markov Models as Slim does [-@slim2016curricular].
 
 
-### BNs in R
+For these examples I will use a simulated data set based on the following curriculum graph:
 
-*bnlearn* is a popular package for using BNs. We now run through an example to demonstrate its use.
+```{r Dispaly Example Graph for BNs}
+# Load graph data
+load("../data/rdata/minGraph.RData")
 
-```{r Bnlearn Example Data,message = FALSE, warning = FALSE}
-library(bnlearn)
-data(learning.test)
-kable(head(learning.test))
+# Specify node locations
+coords <- matrix(ncol = 2, byrow = T, data = c(
+    1, 0,
+    1, 1,
+    1, 2,
+    1, 3,
+    1, 4, 
+    2, 0,
+    2, 1,
+    2, 2,
+    2, 3,
+    2, 4, 
+    3, 0,
+    3, 1,
+    3, 2,
+    3, 3,
+    3, 4, 
+    4, 0,
+    4, 1,
+    4, 2,
+    4, 3,
+    4, 4, 
+    5, 0,
+    5, 1,
+    5, 2,
+    5, 3, 
+    6, 0,
+    6, 1,
+    6, 2,
+    6, 3,
+    6, 4
+))
+
+# Visualize graph
+min_graph$node_list$label <- gsub(" ", ".", min_graph$node_list$label)
+visNetwork(
+  min_graph$node_list,
+  min_graph$edge_list,
+  submain = paste(
+    "Total Structural Complexity:",
+    min_graph$sc_total,
+    "Total Blocking Factor:",
+    min_graph$bf_total,
+    "Total Delay Factor:",
+    min_graph$df_total
+  )
+) %>%
+  visEdges(arrows = "to") %>%
+  visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
+  visEvents(
+    selectNode = "function(properties) {
+      alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc + ' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf + ' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf + ' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}"
+  )
 ```
 
-```{r Str of Learning.Test}
-str(learning.test)
+The data needed for a BN will consist of a student's grades for all these courses.
+
+```{r Create Dummy Grades BN}
+# Get courses and Grades for Factor
+courses <- min_graph$node_list$label
+grades <- c("A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D")
+
+# Construct Data Frame
+
+df <-
+  data.frame(setNames(replicate(
+    length(courses), numeric(1000), simplify = FALSE
+  ), courses))
+
+for (i in seq_len(1000)) {
+  for (j in 1:length(courses)) {
+    df[i, j] <- sample(grades, 1)
+  }
+}
+
+df <- data.frame(lapply(df, function(x)
+  factor(x, levels = grades)))
+
+kable(head(df))
 ```
 
-We learn the structure of this Bayesian network using hc. After doing so we can plot the network using visNetwork.
+As we can see each column is a factor of the grades and each row is a student's grades as they flow throw the curriculum graph:
 
-```{r Example of Learning Graph Structure}
-bn.hc <- hc(learning.test, score = "aic")
-
-label <- names(bn.hc$nodes)
-node_list <- data.frame(id = label, label = label)
-edge_list <- as.data.frame(bn.hc$arcs)
-
-visNetwork(node_list, edge_list) %>%
-  visEdges(arrows = "middle")
+```{r Str of df}
+str(df)
 ```
+With this we can construct our BN with the requisite edgelist for nodes in this graph. The edge list is specified in the following form:
+```{r View edge_list for Dummy Data}
+kable(head(min_graph$edge_list))
+```
+
+```{r Create a Fully Specified Model}
+#TODO no edge information for STAt 400
+
+# Create a fully specified model
+
+map <- min_graph$node_list[,1:2]
+wl <- min_graph$edge_list
+wl$from <- left_join(wl, map, by = c("from" = "id"))$label
+wl$to <- left_join(wl, map, by = c("to" = "id"))$label
+
+e <- empty.graph(min_graph$node_list$label)
+arcs(e) <- as.matrix(wl)
+e
+```
+Rather than specify all edges we may also make use of structural learning and our data set to generate a BN.
+
+If you wish to include priors while learning the structure you may do so by specifying a white list. These edges will always be included in the graph and is similar to the approach above.
+
+```{r Create a Whitelisted Strucural Learning BN}
+#TODO no edge information for STAT 400
+bn.spec <- hc(df, whitelist = wl, score = "bic")
+bn.spec
+```
+The network learned from our data and white list is
+
+```{r View bn.spec}
+library(bnviewer)
+viewer(bn.spec)
+```
+
+This is the same as the original graph as we specified all edges we wanted. We may also learn the structure given our data. For this example we use constraint-based learning methods.
+
+```{r generate pdag}
+pdag = iamb(df)
+pdag
+```
+As we can see it learned different edges between nodes and even learned some undirected edges. Undirected edges arise when the two possible directions are score equivalent and so we have to set them (BNs must be DAGs).
+
+```{r create dag from pdag}
+dag = cextend(pdag)
+dag
+```
+
+Once the structure is learned you must do parameter estimation to learn the conditional probability tables of the nodes. We use maximum likelihood estimation. We can then plot the conditional probabilities for each node.
+
+```{r cpt for data 101 mle}
+fitted = bn.fit(dag, df, method = "mle")
+bn.fit.dotplot(fitted$DATA.101)
+```
+You may also use the expected value of the nodes' posterior distribution to calculate conditional probability tables:
+
+```{r cpt for data 101 bayes}
+fitted = bn.fit(dag, df, method = "bayes")
+bn.fit.dotplot(fitted$DATA.101)
+```
+
+#### Model Validation
+
+Bnlearn has many functions for comparing the structure of BNs. This allows us to construct multiple Bayesian Networks, perhaps one from our whitelist and the other from a structural learning algorithm, and compare and contrast them.
+
+We can check if two networks are equivalent. This method will tell us if the number of nodes, edges, or both are different.
+
+```{r check equality for dag}
+all.equal(bn.spec,dag)
+```
+The *Hamming distance* computes the number of arcs that are different between two networks and is a similarity metric.
+
+```{r hamming}
+hamming(bn.spec,dag)
+```
+We can use bn.boot() to bootstrap custom functions on our graph. For example to know how many arcs you can expect in a network learned with iamb:
+
+```{r test bn.boot, warning=FALSE}
+unlist(bn.boot(df, statistic = narcs, algorithm = "iamb", R = 10))
+```
+
+arc strength is a measure of the degree of confidence for a single arc. We may calculate the arc strength as follows
+
+```{r test arc strength, warning=FALSE}
+kable(head(boot.strength(df, algorithm = "iamb")))
+```
+
+Cross-validation is also implemented for BNs. This will perform cross-validation for a specified structural learning algorithm. This way you can compare which algorithms minimize the log-likelihood loss better and are therefore fitting the data better.
+
+```{r plot cv bar chart, warning=FALSE}
+cv.bic = bn.cv(
+  df,
+  bn = "hc",
+  runs = 10,
+  algorithm.args = list(score = "bic")
+)
+cv.bde = bn.cv(
+  df,
+  bn = "hc",
+  runs = 10,
+  algorithm.args = list(score = "bde", iss = 1)
+)
+plot(cv.bic, cv.bde, xlab = c("BIC", "BDe"))
+```
+
+We may also compare the structure of our whitelist graph and learned graphs using cv. This will tell us how our expert knowledge graph holds up.
+
+Expert graph:
+
+```{r k-fold cv on bn expert, warning=FALSE}
+bn.cv(df,e, algorithm.args = list(score = "aic"))
+```
+
+Learned Graph:
+
+```{r k-fold cv on learned, warning=FALSE}
+bn.cv(df,dag, algorithm.args = list(score = "aic"))
+```
+
+
+```{r k-fold cv on alarm test, warning=FALSE}
+data(alarm)
+res = empty.graph(names(alarm))
+modelstring(res) = paste("[HIST|LVF][CVP|LVV][PCWP|LVV][HYP][LVV|HYP:LVF]",
+   "[LVF][STKV|HYP:LVF][ERLO][HRBP|ERLO:HR][HREK|ERCA:HR][ERCA]",
+   "[HRSA|ERCA:HR][ANES][APL][TPR|APL][ECO2|ACO2:VLNG][KINK]",
+   "[MINV|INT:VLNG][FIO2][PVS|FIO2:VALV][SAO2|PVS:SHNT][PAP|PMB][PMB]",
+   "[SHNT|INT:PMB][INT][PRSS|INT:KINK:VTUB][DISC][MVS][VMCH|MVS]",
+   "[VTUB|DISC:VMCH][VLNG|INT:KINK:VTUB][VALV|INT:VLNG][ACO2|VALV]",
+   "[CCHL|ACO2:ANES:SAO2:TPR][HR|CCHL][CO|HR:STKV][BP|CO:TPR]", sep = "")
+ bn.cv(alarm, res, algorithm.args = list(score = "aic"))
+```
+
+
+We can of course use cv for prediction error
+
+```{r predic error on math 303}
+xval = bn.cv(df, bn = "hc", loss = "pred", loss.args = list(target = "MATH.303"))
+xval
+```
+Moving this into a confusion matrix
+
+```{r cm for math 303}
+OBS = unlist(lapply(xval, `[[`, "observed"))
+PRED = unlist(lapply(xval, `[[`, "predicted"))
+table(OBS, PRED)
+```
+#### Inference
+
+With a fitted model we can perform inference. A common task in inference is to calculate the log-likelihood to gain a better understanding of model fit. This is done quite easily:
+
+```{r loglik on bn.hc}
+# Train/Test Split
+
+df_train <- df[1:600,]
+df_test <- df[601:1000,]
+
+# Generate model
+
+bn.hc <- hc(df_train, whitelist = wl)
+
+# Calculate log-likelihood for the entire model
+
+logLik(bn.hc,df_test)
+```
+
+```{r summary of loglik per node}
+# Calculate log-likelihood for individual nodes
+summary(logLik(bn.hc, df_test, nodes = colnames(df), by.sample = TRUE, debug = TRUE))
+```
+
+Prediction is available to us as well. There are several methods for prediction that we will now go through.
+
+One way to conduct predictions is to use the local distribution of any given node to find the most probable value for that node conditioned on its parents. Let's say we want to predict students' grades for DATA 311 using this method.
+
+
+```{r parent predic example}
+dfitted = bn.fit(dag, df_train)
+pred = predict(dfitted, node = "DATA.311", data = df_test, method = "parents")
+head(pred)
+```
+```{r cm for parent predic example}
+table(df_test$DATA.311, pred)
+```
+
+
+A limitation of this prediction method is root nodes lack parents and are therefore assigned the mode value of their distribution as the prediction.
+
+Setting method to bayes-lw will allow us to predict using more nodes than simply the parents. This uses Monte Carlo posterior inference to perform predictions with likelihood weighting.
+
+```{r bayes-lw predic example}
+pred = predict(dfitted, node = "DATA.311", data = df_test, method = "bayes-lw")
+head(pred)
+```
+```{r bayes-lw predic example cm}
+table(df_test$DATA.311, pred)
+```
+### Bnviewer
+
+[Bnviewer](http://robsonfernandes.net/bnviewer/) is an interactive visualization library for Bayesian networks. Aside from being able to visualize base networks we can make interesting visualizations highlighting many different metrics.
 
 
 ## Analysis of UBCO Data Science Major Curriculum
