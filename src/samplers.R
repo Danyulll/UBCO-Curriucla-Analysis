@@ -376,6 +376,233 @@ min_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df
 
 
 ###########################
+### DS New Major Sampler
+###########################
+
+Gc <- list()
+for (i in 1:1000) {
+  # Generate degree pathway
+  pathway <-
+    data.frame(
+      Course.Code = NA,
+      Course.Name = NA,
+      Course.Description = NA,
+      Prerequisite = NA,
+      Corequisite = NA,
+      Equivalents = NA
+    )
+  
+  # First Year
+  pathway <- rbind(pathway, subset(ubco, Course.Code == "DATA 101"))
+  pathway <-
+    rbind(pathway, subset(ubco, Course.Code %in% c("MATH 100", "MATH 101")))
+  samp <- sample(c(0, 1,2), 1)
+  
+  if (samp == 0) {
+    pathway <- rbind(pathway, subset(ubco, Course.Code == "ENGL 109"))
+  } else if(samp == 1){
+    samp <- sample(
+      c(
+        "ENGL 112",
+        "ENGL 113",
+        "ENGL 114",
+        "ENGL 150",
+        "ENGL 151",
+        "ENGL 153",
+        "ENGL 154",
+        "ENGL 155",
+        "ENGL 156"
+      ),
+      2
+    )
+    pathway <- rbind(pathway, subset(ubco, Course.Code %in% samp))
+  } else{
+    prereq <- sample(c("ENGL 109", "ENGL 112", "ENGL 114", "ENGL 150", "ENGL 151", "ENGL 153", "ENGL 155", "ENGL 156"),1)
+    pathway <- rbind(pathway, subset(ubco, Course.Code %in% c("CORH 203",prereq)))
+  }
+  pathway <-
+    rbind(pathway, subset(ubco, Course.Code %in% c("COSC 111", "COSC 121")))
+  
+  courses <- c("BIOL 116 or BIOL 117", "BIOL 122 or BIOL 125", "BIOL 131", "BIOL 133", "CHEM 111 or CHEM 121","CHEM 113 or CHEM 123", "EESC 111", "EESC 121", "PHYS 111 or PHYS 112", "PHYS 121 or PHYS 122")
+  
+  # TODO make sure the prereqs for these classes are added later
+  courses <- sample(courses, 2)  
+  
+  courses <- str_split(courses, " or ")
+  courses <- c(sample(unlist(courses[1]),1), unlist(sample(courses[2]),1))
+  pathway <-
+    rbind(pathway, subset(ubco, Course.Code %in% courses))
+  
+  
+  # Second Year
+  pathway <-
+    rbind(pathway, subset(
+      ubco,
+      Course.Code %in% c("MATH 200",
+                         "MATH 220",
+                         "MATH 221",
+                         "MATH 222",
+                         "MATH 225",
+                         "STAT 203",
+                         "STAT 205",
+                         "COSC 222")
+    ))
+  
+  
+  # Third and Fourth Year
+  pathway <-
+    rbind(pathway, subset(
+      ubco,
+      Course.Code %in% c("DATA 310",
+                         "DATA 311",
+                         "COSC 304",
+                         "STAT 303",
+                         "PHIL 331",
+                         "DATA 315")
+    ))
+  
+  
+  
+  upper_year_data <-
+    c("DATA 301","DATA 405", "DATA 407", "DATA 410","DATA 419","DATA 448")
+  
+  max_2_stat <- c("STAT 400", "STAT 401", "STAT 403", "STAT 406")
+  
+  max_2_cosc_phys <-
+    c(
+      "COSC 322",
+      "COSC 329",
+      "COSC 344",
+      "COSC 421",
+      "PHYS 420"
+    )
+  
+  max_2_math <- c("MATH 303","MATH 307","MATH 327","MATH 409")
+  
+  course <- c()
+  math_cred <- 0
+  stat_cred <- 0
+  cosc_phys_cred <- 0
+  data_cred <- 0
+  while (length(unique(course)) < 8) {
+    var <- sample(1:4, 1)
+    
+    if (var == 1 && stat_cred < 2) {
+      course <- c(course, sample(max_2_stat, 1))
+      stat_cred <- stat_cred + 1
+    } else if (var == 2 && cosc_phys_cred < 2) {
+      course <- c(course, sample(max_2_cosc_phys, 1))
+      cosc_phys_cred <- cosc_phys_cred + 1
+    } else if (var == 3) {
+      course <- c(course, sample(upper_year_data, 1))
+      data_cred <- data_cred + 1
+    } else if (var == 4 && math_cred < 2)
+      course <- c(course,sample(max_2_math, 1))
+    math_cred <- math_cred + 1
+  }
+  
+  pathway <-
+    rbind(pathway, subset(ubco, Course.Code %in% unique(course)))
+  
+  pathway <- na.omit(pathway)
+  rownames(pathway) <- 1:nrow(pathway)
+  
+  # Construct node and edge list
+  
+  node_list <-
+    data.frame(id = rownames(pathway), label = pathway$Course.Code)
+  
+  edge_list <- data.frame(from = NA, to = NA)
+  
+  for (node in node_list$label) {
+    str <- subset(pathway, Course.Code == node)$Prerequisite
+    course_code <- ""
+    if (str != "") {
+      course_code <- str_extract_all(str, "[A-Z]{4} [0-9]{3}")[[1]]
+    }
+    
+    from <- rownames(subset(pathway, Course.Code == node))
+    to <- rownames(subset(pathway, Course.Code %in% course_code))
+    if (length(to) > 1) {
+      for (id in to) {
+        edge_list <- rbind(edge_list, data.frame(from = id, to = from))
+      }
+    } else {
+      edge_list <- rbind(edge_list, data.frame(from = to[1], to = from))
+    }
+  }
+  edge_list <- na.omit(edge_list)
+  
+  # Get structural complexity
+  
+  sc <- structural_complexity(edge_list, node_list)
+  
+  # Store in list
+  results <-
+    list(node_list = node_list,
+         edge_list = edge_list,
+         sc = sc)
+  
+  Gc <- c(Gc, list(results))
+}
+
+# Initialize variables for maximum and minimum values
+max_total <- -Inf
+min_total <- Inf
+max_index <- NULL
+min_index <- NULL
+
+# Iterate through Gc to find max and min indices
+for (i in seq_along(Gc)) {
+  total <- Gc[[i]]$sc$total
+  if (total > max_total) {
+    max_total <- total
+    max_index <- i
+  }
+  if (total < min_total) {
+    min_total <- total
+    min_index <- i
+  }
+}
+
+# Create Max Graph
+node_list <- Gc[[max_index]]$node_list
+edge_list <- Gc[[max_index]]$edge_list
+
+sc_df <- structural_complexity(edge_list,node_list)
+cf_df <- centrality_factor(edge_list,node_list)
+bf_df <- blocking_factor(edge_list,node_list)
+df_df <- delay_factor(edge_list,node_list)
+
+node_list <- left_join(node_list, sc_df$bynode, by = c("id" = "id"))
+node_list <- left_join(node_list, cf_df, by = c("id" = "id"))
+node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "id"))
+node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
+max_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
+
+# save(max_graph, file = ".\\data\\rdata\\maxGraphNewCur.RData")                                                          
+
+# Create Min Graph
+
+node_list <- Gc[[min_index]]$node_list
+edge_list <- Gc[[min_index]]$edge_list
+
+sc_df <- structural_complexity(edge_list,node_list)
+cf_df <- centrality_factor(edge_list,node_list)
+bf_df <- blocking_factor(edge_list,node_list)
+df_df <- delay_factor(edge_list,node_list)
+
+node_list <- left_join(node_list, sc_df$bynode, by = c("id" = "id"))
+node_list <- left_join(node_list, cf_df, by = c("id" = "id"))
+node_list <- left_join(node_list, bf_df$bynode, by = c("id" = "id"))
+node_list <- left_join(node_list, df_df$bynode, by = c("id" = "id"))
+
+min_graph <- list(edge_list = edge_list, node_list = node_list, sc_total = sc_df$total, bf_total = bf_df$total, df_total = df_df$total)
+
+# save(min_graph, file = ".\\data\\rdata\\minGraphNewCur.RData")
+
+
+###########################
 ### DS Minor Sampler
 ###########################
 

@@ -547,6 +547,7 @@ kable(head(min_graph$edge_list))
 ```
 
 ```{r Create a Fully Specified Model}
+library(bnlearn)
 #TODO no edge information for STAt 400
 
 # Create a fully specified model
@@ -1248,6 +1249,198 @@ The courses in the min graph that are not found in the max graph are:
 idx <- !(min_graph$node_list$label %in% max_graph$node_list$label)
 kable(data.frame(Courses=min_graph$node_list$label[idx]))
 ```
+
+## Simulation
+
+Recently the highly central course Stat 230 has been split into 2 courses. We therefore wish to see how the structural complexity is affected by this change. We will then use the Curricular Analysis Simulation Library (CASL) to simulate students moving through the old and new curriculum. This will help use gauge the effects of out changes.
+
+## 2023-2024 Curriculum
+
+There has been another large revamp in DS curriculum. STAT 230 has been split into two courses, more math courses have become required, and many prerequisites have been changed. We conduct an analysis of the maximally and minimally structurally complex new curricula.
+
+### Maximum Structural Complexity
+
+```{r Generate Max Node Coords - New Major}
+# Specify node locations
+coords <- matrix(ncol = 2, byrow = T, data = c(
+    1, 0,
+    1, 1,
+    1, 2,
+    1, 3,
+    1, 4, #
+    2, 0,
+    2, 1,
+    2, 2,
+    2, 3,
+    2, 4, #
+    3, 0,
+    3, 1,
+    3, 2,
+    3, 3,
+    3, 4, #
+    4, 0,
+    4, 1,
+    4, 2,
+    4, 3,
+    4, 4, #
+    5, 0,
+    5, 1,
+    5, 2,
+    5, 3,
+    5, 4, #
+    6, 0,
+    6, 1,
+    6, 2,
+    6, 3,
+    6, 4,
+    6, 5
+))
+```
+
+
+```{r Visualize Max Graph - New Major}
+load("..\\data\\rdata\\maxGraphNewCur.RData")
+
+visNetwork(
+  max_graph$node_list,
+  max_graph$edge_list,
+  submain = paste(
+    "Total Structural Complexity:",
+    max_graph$sc_total,
+    "Total Blocking Factor:",
+    max_graph$bf_total,
+    "Total Delay Factor:",
+    max_graph$df_total
+  )
+) %>%
+  visEdges(arrows = "to") %>%
+  visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
+  visEvents(
+    selectNode = "function(properties) {
+      alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc + ' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf + ' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf + ' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}"
+  )
+```
+
+Our total strucutral complexity 159, total blocking factor is 57, and total delay factor is 102. In terms of overal strucutral complexity and blockign factor we see a huge decrease from the previous year's DS program. The previous structural complexity for the max graph was 194 and the blocking factor was 80. In terms od delay factor we see a fairly small decrease going from 114 in the old graph to 102 in this graph. This suggests that overall we've reduced the density of edges between nodes but many long paths throughout the curriculum still exist.
+
+The big changes in this graph are STAT 230 being split into STAT 203 and 205, DATA 410 going from 3 prerequisites to just 1, and the addition of several new second year math courses.
+
+The most central courses are MATH 200 at 32, MATH 101 with 31 and STAT 303 at 30. Previously STAT 230 held the highest centrality at 138. It seems much of the edge density has been distributed among these 3 courses after the deletion of STAT 230.
+
+The courses with the highest blocking factors are MATH 100 with 15, MATH 101 at 8. STAT 205 has 6 and STAT 203 has 3.
+
+The courses with the highest delay factor are MATH 100, MATH 101, MATH 200, STAT 303, STAT 403 with a delay factor of 5. 
+
+The highest cruciality courses are MATH 100 at 20 and MATH 101 at 13. This a good step down from their previous scores of 23 and 20 respectively.
+
+Previously Stat 230 fed into every single uppear STAT and DATA course either on its own or through STAT 303. Now only STAT 203 goes into STAT 303 and STAT 205 goes to 3rd level DATA courses. This greatly reduces the structural complexity since STAT 230 acted as an exetremly central node with a high blockign factor and was a part of every long path.
+
+Data 410 used to have 3 prerequisite courses all of which were quite important to the major. This made DATA 410 a part of many long paths and a difficult course to get to. By making the only prereq DATA 310 this has helped reduce the structural complexity.
+
+
+```{r}
+kable(max_graph$node_list)
+```
+
+### Minimum Structural Complexity
+
+```{r Generate Min Node Coords - New Major}
+# Specify node locations
+coords <- matrix(ncol = 2, byrow = T, data = c(
+    1, 0,
+    1, 1,
+    1, 2,
+    1, 3,
+    1, 4, 
+    2, 0,
+    2, 1,
+    2, 2,
+    2, 3,
+    2, 4, 
+    3, 0,
+    3, 1,
+    3, 2,
+    3, 3,
+    3, 4, 
+    4, 0,
+    4, 1,
+    4, 2,
+    4, 3,
+    4, 4, 
+    5, 0,
+    5, 1,
+    5, 2,
+    5, 3, 
+    6, 0,
+    6, 1,
+    6, 2,
+    6, 3
+))
+```
+
+```{r Visualize Min Graph - New Major}
+load("../data/rdata/minGraphNewCur.RData")
+
+visNetwork(
+  min_graph$node_list,
+  min_graph$edge_list,
+  submain = paste(
+    "Total Structural Complexity:",
+    min_graph$sc_total,
+    "Total Blocking Factor:",
+    min_graph$bf_total,
+    "Total Delay Factor:",
+    min_graph$df_total
+  )
+) %>%
+  visEdges(arrows = "to") %>%
+  visIgraphLayout(layout = "layout.norm", layoutMatrix = coords) %>%
+  visEvents(
+    selectNode = "function(properties) {
+      alert(' sc: ' + this.body.data.nodes.get(properties.nodes[0]).sc + ' cf: ' + this.body.data.nodes.get(properties.nodes[0]).cf + ' bf: ' + this.body.data.nodes.get(properties.nodes[0]).bf + ' df: ' + this.body.data.nodes.get(properties.nodes[0]).df);}"
+  )
+```
+
+The total structural complexity is 102, the total blocking factor is 32, and the total delay factor is 70. Again this is a large step down from the previous minimally complex graph which had a total structural complexity of 147, a total blocking factor of 56, and a total delay factor of 91.
+
+The highest centrality nodes are MATH 101 at 13 and MATH 200 at 7.
+
+The highest blocking factor nodes are MATH 100 at 9, COSC 111 at 6, and STAT 205 at 6.
+
+The highest delay factor nodes are MATH 100, MATH 101, MATH 200, and STAT 303 at 4.
+
+The nodes with the greatest structural complexity are MATH 100 at 13, COSC 111 at 9, STAT 205 at 9, and MATH 101 at 8.
+
+Again splitting up STAT 230 has huge impacts for reducing structural complexity.
+
+Here is a full table of the metrics
+```{r}
+kable(min_graph$node_list)
+```
+
+The courses in the max graph that are not found in the min graph are:
+
+```{r}
+idx <- !(max_graph$node_list$label %in% min_graph$node_list$label)
+kable(data.frame(Courses=max_graph$node_list$label[idx]))
+```
+
+
+
+The courses in the min graph that are not found in the max graph are:
+
+```{r}
+idx <- !(min_graph$node_list$label %in% max_graph$node_list$label)
+kable(data.frame(Courses=min_graph$node_list$label[idx]))
+```
+
+### Writing Graphs to JSON
+
+```{r}
+
+```
+
+
 
 ## References
 
