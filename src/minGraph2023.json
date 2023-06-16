@@ -1,0 +1,229 @@
+{
+	"terms": 6,
+	"courses":[
+		{
+			"name":"DATA 101",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"MATH 100",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"MATH 101",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"ENGL 109",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"COSC 111",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": [MATH 100]
+		},
+		{
+			"name":"COSC 121",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"PHYS 121",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"BIOL 116",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"BIOL 117",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"MATH 200",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"MATH 221",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"COSC 222",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"MATH 225",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"MATH 220",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"STAT 203",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"STAT 205",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [MATH 100],
+			"prerequisites": []
+		},
+		{
+			"name":"MATH 222",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"DATA 311",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [MATH 101],
+			"prerequisites": [MATH 100 and one of PHYS 111, PHYS 112]
+		},
+		{
+			"name":"COSC 304",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [MATH 101],
+			"prerequisites": [MATH 100 and one of PHYS 111, PHYS 112]
+		},
+		{
+			"name":"STAT 303",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": []
+		},
+		{
+			"name":"PHIL 331",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": [COSC 111]
+		},
+		{
+			"name":"DATA 310",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": [MATH 101]
+		},
+		{
+			"name":"DATA 315",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [MATH 101],
+			"prerequisites": [MATH 100]
+		},
+		{
+			"name":"DATA 301",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": [One of MATH 101, MATH 103, MATH 142 and one of DATA 101, COSC 221, ECON 102]
+		},
+		{
+			"name":"STAT 400",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [COSC 121],
+			"prerequisites": [MATH 101]
+		},
+		{
+			"name":"COSC 421",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": [COSC 121]
+		},
+		{
+			"name":"DATA 405",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": [third-year standing or one of COSC 111 or COSC 122]
+		},
+		{
+			"name":"DATA 407",
+			"credits": 3,
+			"passrate": 0.5,
+			"term": 999,
+			"corequisites": [],
+			"prerequisites": [Either one of STAT 205, STAT 230, or one of APSC 254, BIOL 202, PSYO 373, and one of COSC 111 or APSC 177]
+		},
+	]
+}

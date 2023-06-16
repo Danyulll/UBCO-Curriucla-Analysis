@@ -1437,8 +1437,49 @@ kable(data.frame(Courses=min_graph$node_list$label[idx]))
 ### Writing Graphs to JSON
 
 ```{r}
-
+graph_to_json_template <- function(maxmin_df_graph, filepath) {
+  ubco <- read.csv("..\\data\\UBCO\\UBCO_Course_Calendar_new.csv")
+  terms = 6
+  sink(filepath)
+  cat(paste0("{\n\t\"terms\": ", terms, ",\n\t\"courses\":["))
+  for (i in 1:length(maxmin_df_graph$node_list$label)) {
+    cat("\n\t\t{")
+    cat(paste0(
+      "\n\t\t\t\"name\":",
+      "\"",
+      maxmin_df_graph$node_list$label[i],
+      "\",\n"
+    ))
+    cat("\t\t\t\"credits\": 3,\n")
+    cat("\t\t\t\"passrate\": 0.5,\n")
+    cat("\t\t\t\"term\": 999,\n")
+    cat(paste0("\t\t\t\"corequisites\": [", ubco$Corequisite[i], "],\n"))
+    cat(paste0("\t\t\t\"prerequisites\": [", ubco$Prerequisite[i], "],\n"))
+    cat("\t\t},")
+  }
+  cat("\n\t]\n}")
+  sink()
+}
 ```
+
+```{r}
+# 2022-2023 DS Major Max Graph
+load("..\\data\\rdata\\maxGraph.RData")
+graph_to_json_template(max_graph,"maxGraph2022.json")
+
+# 2022-2023 DS Major Min Graph
+load("../data/rdata/minGraph.RData")
+graph_to_json_template(min_graph,"minGraph2022.json")
+
+# 2023-2024 DS Major Max Graph
+load("..\\data\\rdata\\maxGraphNewCur.RData")
+graph_to_json_template(max_graph,"maxGraph2023.json")
+
+# 2023-2024 DS Major Min Graph
+load("../data/rdata/minGraphNewCur.RData")
+graph_to_json_template(min_graph,"minGraph2023.json")
+```
+
 
 
 
